@@ -61,18 +61,16 @@ module UseCase
       # @return [Hash]
       #
       def process_params(params)
+
         rental_location_id = params[:rental_location_id] || params['rental_location_id']
         
-        unless rental_location_id
-          return { valid: false, authorized: true, message: 'rental_location_id parameter is required' }
-        end
+        validator = Validation::BaseValidator.new(params, { rental_location_id: [:required, :int] })
+        validator.validate!
 
-        validation_result = validate_rental_location_id(rental_location_id)
-        unless validation_result[:valid]
-          return { valid: false, authorized: true, message: validation_result[:message] }
-        end
+        return { valid: true, authorized: true, rental_location_id: validator.data[:rental_location_id] }
 
-        return { valid: true, authorized: true, rental_location_id: validation_result[:rental_location_id] }
+      rescue Errors::ValidationError => error
+        return { valid: false, authorized: true, message: error.errors }
       end
 
       #
@@ -89,31 +87,6 @@ module UseCase
             rental_location_id: rental_location_id 
           } 
         }
-      end
-
-      #
-      # Validate rental location ID
-      #
-      # @param [Object] rental_location_id - The ID to validate
-      #
-      # @return [Hash] Validation result
-      #
-      def validate_rental_location_id(rental_location_id)
-        if rental_location_id.nil? || rental_location_id.to_s.strip.empty?
-          return { valid: false, message: 'rental_location_id is required' }
-        end
-        
-        unless rental_location_id.to_s.match?(/^\d+$/)
-          return { valid: false, message: 'rental_location_id must be a valid integer' }
-        end
-        
-        rental_location_id = rental_location_id.to_i
-        
-        if rental_location_id <= 0
-          return { valid: false, message: 'rental_location_id must be a positive integer' }
-        end
-
-        return { valid: true, rental_location_id: rental_location_id }
       end
 
     end
