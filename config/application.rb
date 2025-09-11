@@ -33,3 +33,7 @@ require_relative '../lib/base_repository'
 require_relative '../lib/base_serializer'
 require_relative '../lib/query'
 require_relative '../lib/transaction'
+
+# Validation classes
+require_relative '../lib/base_validator'
+require_relative '../lib/errors/validation_error'
