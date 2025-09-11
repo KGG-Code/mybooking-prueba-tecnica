@@ -36,4 +36,6 @@ require_relative '../lib/transaction'
 
 # Validation classes
 require_relative '../lib/base_validator'
-require_relative '../lib/errors/validation_error'
+
+# Middlewares
+require_relative "../app/middlewares/error_handler"
