@@ -16,10 +16,6 @@ module UseCase
       def initialize(rental_location_repository, logger)
         @rental_location_repository = rental_location_repository
         @logger = logger
-        # Schema para probar la validación - requerimos un parámetro opcional
-        @schema = {
-          rental_location_id: [:required, :int]
-        }
       end
 
       #
@@ -65,21 +61,9 @@ module UseCase
       # @return [Hash]
       #
       def process_params(params)
-        # Para rental_locations no necesitamos validación, pero usamos el validador para consistencia
-        validator = Validation::BaseValidator.new(params, { rental_location_id: [:required, :int] })
-        validator.validate!
-        
-        return { 
-          valid: true, 
-          authorized: true, 
-          data: validator.data 
-        }
-      rescue Errors::ValidationError => error
-        return { 
-          valid: false, 
-          authorized: true, 
-          message: error.errors 
-        }
+
+        return { valid: true, authorized: true }
+
       end
 
     end
