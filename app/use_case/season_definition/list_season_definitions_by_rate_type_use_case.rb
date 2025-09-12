@@ -86,13 +86,20 @@ module UseCase
         rate_type_id = processed_params[:rate_type_id]
         rental_location_id = processed_params[:rental_location_id]
         {
+          season_definition_rental_locations: {
+            rental_location_id: rental_location_id
+          },
           price_definitions: {
-            category_rental_location_rate_types: {
-              rate_type_id: rate_type_id,
-              rental_location_id: rental_location_id
-            }
+            rate_type_id: rate_type_id
           }
         }
+
+        #price_definitions: {
+        #    category_rental_location_rate_types: {
+        #      rate_type_id: rate_type_id,
+        #      rental_location_id: rental_location_id
+        #    }
+        #  }
       end
     end
   end
