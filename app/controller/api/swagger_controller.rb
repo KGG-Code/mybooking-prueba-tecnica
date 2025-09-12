@@ -523,12 +523,47 @@ module Controller
                   }
                 }
               },
-              "/api/price-definitions": {
+              "/api/pricing": {
                 "get": {
-                  "summary": "List all price definitions",
-                  "description": "Returns a list of all price definitions ordered by name",
-                  "operationId": "listPriceDefinitions",
+                  "summary": "List price definitions with optional filters",
+                  "description": "Returns a list of price definitions with optional filtering capabilities",
+                  "operationId": "listPricing",
                   "tags": ["Pricing"],
+                  "parameters": [
+                    {
+                      "name": "season_definition_id",
+                      "in": "query",
+                      "description": "Season definition ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "rate_type_id",
+                      "in": "query",
+                      "description": "Rate type ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "season_id",
+                      "in": "query",
+                      "description": "Season ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    }
+                  ],
                   "responses": {
                     "200": {
                       "description": "successful operation",
@@ -578,11 +613,11 @@ module Controller
                   }
                 }
               },
-              "/api/price-definitions-by-season-definition": {
+              "/api/filtered-pricing": {
                 "get": {
-                  "summary": "List price definitions by season definition",
-                  "description": "Returns price definitions filtered by season definition ID. Pass 'null' to get price definitions without season definition",
-                  "operationId": "listPriceDefinitionsBySeasonDefinition",
+                  "summary": "List price definitions with mandatory filters",
+                  "description": "Returns price definitions filtered by mandatory season definition ID, with optional rate type ID and season ID filters",
+                  "operationId": "listFilteredPricing",
                   "tags": ["Pricing"],
                   "parameters": [
                     {
@@ -590,6 +625,28 @@ module Controller
                       "in": "query",
                       "description": "Season definition ID to filter price definitions. Pass 'null' to get price definitions without season definition",
                       "required": true,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "rate_type_id",
+                      "in": "query",
+                      "description": "Rate type ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "season_id",
+                      "in": "query",
+                      "description": "Season ID to filter price definitions. Optional parameter",
+                      "required": false,
                       "schema": {
                         "type": "string",
                         "description": "Integer ID or 'null' string"

@@ -2,8 +2,8 @@ module Controller
   module Api
     module PricingController
       def self.registered(app)
-        # REST API end-point to list all price definitions
-        app.get '/api/price-definitions' do
+        # REST API end-point to list price definitions with optional filters
+        app.get '/api/pricing' do
           service = Service::PricingService.new
           use_case = UseCase::Pricing::ListPriceDefinitionsUseCase.new(service, logger)
 
@@ -15,8 +15,8 @@ module Controller
           end
         end
 
-        # REST API end-point to list price definitions filtered by season definition
-        app.get '/api/price-definitions-by-season-definition' do
+        # REST API end-point to list price definitions with mandatory filters
+        app.get '/api/filtered-pricing' do
           service = Service::PricingService.new
           use_case = UseCase::Pricing::ListPriceDefinitionsBySeasonDefinitionUseCase.new(
             service,

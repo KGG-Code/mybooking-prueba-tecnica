@@ -42,9 +42,10 @@ module UseCase
       private
 
       def load_data(conditions)
-        season_definition_id = conditions[:season_definition_id]
         service_conditions = {}
-        service_conditions[:season_definition_id] = season_definition_id unless season_definition_id.nil?
+        service_conditions[:season_definition_id] = conditions[:season_definition_id] unless conditions[:season_definition_id].nil?
+        service_conditions[:rate_type_id] = conditions[:rate_type_id] unless conditions[:rate_type_id].nil?
+        service_conditions[:season_id] = conditions[:season_id] unless conditions[:season_id].nil?
         
         @pricing_service.get_price_definitions(service_conditions)
       end
@@ -55,14 +56,24 @@ module UseCase
       # @return [Hash]
       #
       def process_params(params)
-
         season_definition_id = params[:season_definition_id] || params['season_definition_id']
+        rate_type_id = params[:rate_type_id] || params['rate_type_id']
+        season_id = params[:season_id] || params['season_id']
         
-        @validator.set_schema({ season_definition_id: [:required, :nullable, :int] })
+        @validator.set_schema({ 
+          season_definition_id: [:required, :nullable, :int],
+          rate_type_id: [:optional, :nullable, :int],
+          season_id: [:optional, :nullable, :int]
+        })
         @validator.validate!(params)
 
-        return { valid: true, authorized: true, season_definition_id: @validator.data[:season_definition_id] }
-       
+        return { 
+          valid: true, 
+          authorized: true, 
+          season_definition_id: @validator.data[:season_definition_id],
+          rate_type_id: @validator.data[:rate_type_id],
+          season_id: @validator.data[:season_id]
+        }
       end
 
       #
@@ -73,8 +84,11 @@ module UseCase
       # @return [Hash] Conditions hash
       #
       def build_conditions(processed_params)
-        season_definition_id = processed_params[:season_definition_id]
-        { season_definition_id: season_definition_id }
+        {
+          season_definition_id: processed_params[:season_definition_id],
+          rate_type_id: processed_params[:rate_type_id],
+          season_id: processed_params[:season_id]
+        }
       end
 
     end

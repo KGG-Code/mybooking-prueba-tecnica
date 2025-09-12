@@ -92,6 +92,7 @@ module Service
       clauses = []
       clauses << "pd.season_definition_id = ?" if conditions[:season_definition_id]
       clauses << "pd.rate_type_id = ?" if conditions[:rate_type_id]
+      clauses << "p.season_id = ?" if conditions[:season_id]
       clauses << "crlrt.rental_location_id = ?" if conditions[:rental_location_id]
       clauses << "crlrt.category_id = ?" if conditions[:category_id]
       
@@ -108,6 +109,7 @@ module Service
       params = []
       params << conditions[:season_definition_id] if conditions[:season_definition_id]
       params << conditions[:rate_type_id] if conditions[:rate_type_id]
+      params << conditions[:season_id] if conditions[:season_id]
       params << conditions[:rental_location_id] if conditions[:rental_location_id]
       params << conditions[:category_id] if conditions[:category_id]
       params

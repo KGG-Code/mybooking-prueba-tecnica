@@ -26,9 +26,9 @@ module UseCase
       # @return [Result]
       #
       def perform(params)
-        
         processed_params = process_params(params)
-        data = load_data
+        conditions = build_conditions(processed_params)
+        data = load_data(conditions)
         @logger.info "ListPriceDefinitionsUseCase - perform - loaded #{data.length} price definitions"
 
         # Return the result
@@ -37,17 +37,42 @@ module UseCase
 
       private
 
-      def load_data
-        @pricing_service.get_price_definitions
+      def load_data(conditions)
+        @pricing_service.get_price_definitions(conditions)
       end
 
       #
-      # Process the parameters - no validation needed
+      # Process the parameters - extract optional filters
       #
       # @return [Hash]
       #
       def process_params(params)
-        return { valid: true, authorized: true }
+        season_definition_id = params[:season_definition_id] || params['season_definition_id']
+        rate_type_id = params[:rate_type_id] || params['rate_type_id']
+        season_id = params[:season_id] || params['season_id']
+        
+        return { 
+          valid: true, 
+          authorized: true, 
+          season_definition_id: season_definition_id,
+          rate_type_id: rate_type_id,
+          season_id: season_id
+        }
+      end
+
+      #
+      # Build conditions for the query
+      #
+      # @param [Hash] processed_params - Processed parameters
+      #
+      # @return [Hash] Conditions hash
+      #
+      def build_conditions(processed_params)
+        conditions = {}
+        conditions[:season_definition_id] = processed_params[:season_definition_id] unless processed_params[:season_definition_id].nil?
+        conditions[:rate_type_id] = processed_params[:rate_type_id] unless processed_params[:rate_type_id].nil?
+        conditions[:season_id] = processed_params[:season_id] unless processed_params[:season_id].nil?
+        conditions
       end
 
     end
