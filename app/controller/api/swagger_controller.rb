@@ -56,6 +56,10 @@ module Controller
               {
                 "name": "Rental Locations",
                 "description": "Operations related to rental locations"
+              },
+              {
+                "name": "Rate Types",
+                "description": "Operations related to rate types"
               }
             ],
             "paths": {
@@ -113,6 +117,142 @@ module Controller
                     }
                   }
                 }
+              },
+              "/api/rate-types": {
+                "get": {
+                  "summary": "List rate types",
+                  "description": "Returns a list of rate types with optional rental location filter",
+                  "operationId": "listRateTypes",
+                  "tags": ["Rate Types"],
+                  "parameters": [
+                    {
+                      "name": "rental_location_id",
+                      "in": "query",
+                      "description": "Filter rate types by rental location ID",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    }
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/RateType"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/rate-types-by-rental-location": {
+                "get": {
+                  "summary": "List rate types by rental location",
+                  "description": "Returns a list of rate types filtered by rental location ID (required parameter)",
+                  "operationId": "listRateTypesByRentalLocation",
+                  "tags": ["Rate Types"],
+                  "parameters": [
+                    {
+                      "name": "rental_location_id",
+                      "in": "query",
+                      "description": "Rental location ID to filter rate types",
+                      "required": true,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    }
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/RateType"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request - rental_location_id is required or invalid",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
               }
             },
             "components": {
@@ -128,6 +268,22 @@ module Controller
                     "name": {
                       "type": "string",
                       "description": "Name of the rental location",
+                      "maxLength": 255
+                    }
+                  },
+                  "required": ["id", "name"]
+                },
+                "RateType": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Unique identifier for the rate type",
+                      "format": "int64"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the rate type",
                       "maxLength": 255
                     }
                   },
