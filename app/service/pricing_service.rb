@@ -14,7 +14,11 @@ module Service
       
       sql = <<-SQL
         SELECT 
-          pd.id as pd_id,
+          rl.name as rental_location_name,
+          rt.name as rate_type_name,
+          c.code as category_code, 
+          c.name as category_name,
+          pd.id as price_definition_id,
           pd.name as pd_name,
           pd.type as pd_type,
           pd.deposit as pd_deposit,
@@ -33,29 +37,14 @@ module Service
           pd.units_value_limit_min_hours as pd_units_value_limit_min_hours,
           pd.apply_price_by_kms as pd_apply_price_by_kms,
           pd.rate_type_id as pd_rate_type_id,
-          pd.season_definition_id as pd_season_definition_id,
-          p.id as p_id,
-          p.time_measurement as p_time_measurement,
-          p.units as p_units,
-          p.price as p_price,
-          p.included_km as p_included_km,
-          p.extra_km_price as p_extra_km_price,
-          p.price_definition_id as p_price_definition_id,
-          p.season_id as p_season_id,
-          crlrt.id as crlrt_id,
-          crlrt.category_id as crlrt_category_id,
-          crlrt.rental_location_id as crlrt_rental_location_id,
-          crlrt.rate_type_id as crlrt_rate_type_id,
-          crlrt.price_definition_id as crlrt_price_definition_id,
-          c.id as c_id,
-          c.code as c_code,
-          c.name as c_name
+          pd.season_definition_id as pd_season_definition_id
         FROM price_definitions pd
-        LEFT JOIN prices p ON pd.id = p.price_definition_id
-        LEFT JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
-        LEFT JOIN categories c ON crlrt.category_id = c.id
+        JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
+        JOIN rental_locations rl ON crlrt.rental_location_id = rl.id
+        JOIN rate_types rt ON crlrt.rate_type_id = rt.id
+        JOIN categories c ON crlrt.category_id = c.id
         #{where_clause}
-        ORDER BY pd.name, p.id, crlrt.id
+        ORDER BY pd.name
         #{pagination_clause}
       SQL
 
@@ -73,11 +62,12 @@ module Service
     params = build_params(conditions)
     
     sql = <<-SQL
-      SELECT COUNT(DISTINCT pd.id)
+      SELECT COUNT(*)
       FROM price_definitions pd
-      LEFT JOIN prices p ON pd.id = p.price_definition_id
-      LEFT JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
-      LEFT JOIN categories c ON crlrt.category_id = c.id
+      JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
+      JOIN rental_locations rl ON crlrt.rental_location_id = rl.id
+      JOIN rate_types rt ON crlrt.rate_type_id = rt.id
+      JOIN categories c ON crlrt.category_id = c.id
       #{where_clause}
     SQL
 
@@ -151,11 +141,16 @@ module Service
       return "" if conditions.empty?
       
       clauses = []
-      clauses << "pd.season_definition_id = ?" if conditions[:season_definition_id]
+      
+      if conditions[:season_definition_id]
+        if conditions[:season_definition_id].to_s.downcase == 'null'
+          clauses << "pd.season_definition_id IS NULL"
+        else
+          clauses << "pd.season_definition_id = ?"
+        end
+      end
+      
       clauses << "pd.rate_type_id = ?" if conditions[:rate_type_id]
-      clauses << "p.season_id = ?" if conditions[:season_id]
-      clauses << "crlrt.rental_location_id = ?" if conditions[:rental_location_id]
-      clauses << "crlrt.category_id = ?" if conditions[:category_id]
       
       clauses.any? ? "WHERE #{clauses.join(' AND ')}" : ""
     end
@@ -168,11 +163,12 @@ module Service
     #
     def build_params(conditions)
       params = []
-      params << conditions[:season_definition_id] if conditions[:season_definition_id]
+      
+      if conditions[:season_definition_id] && conditions[:season_definition_id].to_s.downcase != 'null'
+        params << conditions[:season_definition_id]
+      end
+      
       params << conditions[:rate_type_id] if conditions[:rate_type_id]
-      params << conditions[:season_id] if conditions[:season_id]
-      params << conditions[:rental_location_id] if conditions[:rental_location_id]
-      params << conditions[:category_id] if conditions[:category_id]
       params
     end
 
