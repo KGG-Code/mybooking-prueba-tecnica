@@ -1,3 +1,5 @@
+require 'json'
+
 module Service
   class PricingService
 
@@ -26,10 +28,18 @@ module Service
           c.code as category_code, 
           c.name as category_name,
           pd.id as price_definition_id,
-          p.season_id as season_id,
-          p.units as units,
-          p.time_measurement as time_measurement,
-          p.price as price
+          JSON_ARRAYAGG(
+            CASE 
+              WHEN p.id IS NOT NULL THEN
+                JSON_OBJECT(
+                  'season_id', p.season_id,
+                  'units', p.units,
+                  'time_measurement', p.time_measurement,
+                  'price', p.price
+                )
+              ELSE NULL
+            END
+          ) as prices
         
         FROM price_definitions pd
         JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
@@ -38,6 +48,7 @@ module Service
         JOIN categories c ON crlrt.category_id = c.id
         LEFT JOIN prices p ON pd.id = p.price_definition_id
         #{where_clause}
+        GROUP BY pd.id, rl.id, rt.id, c.id
         ORDER BY pd.name, p.units
         #{pagination_clause}
       SQL
@@ -46,7 +57,19 @@ module Service
     puts sql
     puts "DEBUG: Parameters: #{params.inspect}"
     
-    Infraestructure::Query.run(sql, *params)
+    results = Infraestructure::Query.run(sql, *params)
+    
+    # Process results to parse JSON, filter null values, and sort by units
+    results.map do |row|
+      if row['prices']
+        parsed_prices = JSON.parse(row['prices'])
+        # Filter out null values from JSON_ARRAYAGG and sort by units
+        row['prices'] = parsed_prices.compact.sort_by { |price| price['units'].to_i }
+      else
+        row['prices'] = []
+      end
+      row
+    end
   end
 
   #
