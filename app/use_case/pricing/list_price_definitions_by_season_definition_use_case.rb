@@ -43,6 +43,7 @@ module UseCase
 
       def load_data(conditions)
         service_conditions = {}
+        service_conditions[:rental_location_id] = conditions[:rental_location_id] unless conditions[:rental_location_id].nil?
         service_conditions[:season_definition_id] = conditions[:season_definition_id] unless conditions[:season_definition_id].nil?
         service_conditions[:rate_type_id] = conditions[:rate_type_id] unless conditions[:rate_type_id].nil?
         service_conditions[:season_id] = conditions[:season_id] unless conditions[:season_id].nil?
@@ -58,6 +59,7 @@ module UseCase
       # @return [Hash]
       #
       def process_params(params)
+        rental_location_id = params[:rental_location_id] || params['rental_location_id']
         season_definition_id = params[:season_definition_id] || params['season_definition_id']
         rate_type_id = params[:rate_type_id] || params['rate_type_id']
         season_id = params[:season_id] || params['season_id']
@@ -65,6 +67,7 @@ module UseCase
         per_page = params[:per_page] || params['per_page']
         
         @validator.set_schema({ 
+          rental_location_id: [:optional, :nullable, :int],
           season_definition_id: [:required, :nullable, :int],
           rate_type_id: [:optional, :nullable, :int],
           season_id: [:optional, :nullable, :int],
@@ -76,6 +79,7 @@ module UseCase
         return { 
           valid: true, 
           authorized: true, 
+          rental_location_id: @validator.data[:rental_location_id],
           season_definition_id: @validator.data[:season_definition_id],
           rate_type_id: @validator.data[:rate_type_id],
           season_id: @validator.data[:season_id],
@@ -93,6 +97,7 @@ module UseCase
       #
       def build_conditions(processed_params)
         {
+          rental_location_id: processed_params[:rental_location_id],
           season_definition_id: processed_params[:season_definition_id],
           rate_type_id: processed_params[:rate_type_id],
           season_id: processed_params[:season_id],

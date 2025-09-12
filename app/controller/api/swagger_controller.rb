@@ -531,6 +531,16 @@ module Controller
                   "tags": ["Pricing"],
                   "parameters": [
                     {
+                      "name": "rental_location_id",
+                      "in": "query",
+                      "description": "Rental location ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "integer"
+                      },
+                      "example": 1
+                    },
+                    {
                       "name": "season_definition_id",
                       "in": "query",
                       "description": "Season definition ID to filter price definitions. Optional parameter",
@@ -645,6 +655,16 @@ module Controller
                   "operationId": "listFilteredPricing",
                   "tags": ["Pricing"],
                   "parameters": [
+                    {
+                      "name": "rental_location_id",
+                      "in": "query",
+                      "description": "Rental location ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "integer"
+                      },
+                      "example": 1
+                    },
                     {
                       "name": "season_definition_id",
                       "in": "query",
@@ -843,6 +863,11 @@ module Controller
                       "description": "Type of price definition",
                       "enum": ["season", "no_season"]
                     },
+                    "rental_location_id": {
+                      "type": "integer",
+                      "description": "ID of the associated rental location",
+                      "format": "int64"
+                    },
                     "rate_type_id": {
                       "type": "integer",
                       "description": "ID of the associated rate type",
@@ -865,7 +890,7 @@ module Controller
                       "format": "decimal"
                     }
                   },
-                  "required": ["id", "name", "type", "rate_type_id"]
+                  "required": ["id", "name", "type", "rental_location_id", "rate_type_id"]
                 }
               }
             }

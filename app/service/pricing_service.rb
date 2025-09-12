@@ -7,10 +7,10 @@ module Service
     # @param conditions [Hash] Optional conditions like { season_definition_id: 1 }
     # @return [Array] Array of price definitions with their relationships
     #
-    def get_price_definitions(conditions = {})
-      where_clause = build_where_clause(conditions)
-      params = build_params(conditions)
-      pagination_clause = build_pagination_clause(conditions)
+  def get_price_definitions(conditions = {})
+    where_clause = build_where_clause(conditions)
+    params = build_params(conditions)
+    pagination_clause = build_pagination_clause(conditions)
       
       sql = <<-SQL
         SELECT 
@@ -19,30 +19,13 @@ module Service
           c.code as category_code, 
           c.name as category_name,
           pd.id as price_definition_id,
-          pd.name as pd_name,
-          pd.type as pd_type,
-          pd.deposit as pd_deposit,
-          pd.excess as pd_excess,
-          pd.time_measurement_months as pd_time_measurement_months,
-          pd.time_measurement_days as pd_time_measurement_days,
-          pd.time_measurement_hours as pd_time_measurement_hours,
-          pd.time_measurement_minutes as pd_time_measurement_minutes,
-          pd.units_management_days as pd_units_management_days,
-          pd.units_management_hours as pd_units_management_hours,
-          pd.units_management_minutes as pd_units_management_minutes,
-          pd.units_management_value_days_list as pd_units_management_value_days_list,
-          pd.units_management_value_hours_list as pd_units_management_value_hours_list,
-          pd.units_management_value_minutes_list as pd_units_management_value_minutes_list,
-          pd.units_value_limit_hours_day as pd_units_value_limit_hours_day,
-          pd.units_value_limit_min_hours as pd_units_value_limit_min_hours,
-          pd.apply_price_by_kms as pd_apply_price_by_kms,
-          pd.rate_type_id as pd_rate_type_id,
-          pd.season_definition_id as pd_season_definition_id
+          p.season_id as season_id
         FROM price_definitions pd
         JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
         JOIN rental_locations rl ON crlrt.rental_location_id = rl.id
         JOIN rate_types rt ON crlrt.rate_type_id = rt.id
         JOIN categories c ON crlrt.category_id = c.id
+        LEFT JOIN prices p ON pd.id = p.price_definition_id
         #{where_clause}
         ORDER BY pd.name
         #{pagination_clause}
@@ -62,12 +45,13 @@ module Service
     params = build_params(conditions)
     
     sql = <<-SQL
-      SELECT COUNT(*)
+      SELECT COUNT(DISTINCT pd.id)
       FROM price_definitions pd
       JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
       JOIN rental_locations rl ON crlrt.rental_location_id = rl.id
       JOIN rate_types rt ON crlrt.rate_type_id = rt.id
       JOIN categories c ON crlrt.category_id = c.id
+      LEFT JOIN prices p ON pd.id = p.price_definition_id
       #{where_clause}
     SQL
 
@@ -142,6 +126,11 @@ module Service
       
       clauses = []
       
+      # Required filters
+      clauses << "rl.id = ?" if conditions[:rental_location_id]
+      clauses << "rt.id = ?" if conditions[:rate_type_id]
+      
+      # Required nullable filter
       if conditions[:season_definition_id]
         if conditions[:season_definition_id].to_s.downcase == 'null'
           clauses << "pd.season_definition_id IS NULL"
@@ -150,7 +139,8 @@ module Service
         end
       end
       
-      clauses << "pd.rate_type_id = ?" if conditions[:rate_type_id]
+      # Optional filter
+      clauses << "p.season_id = ?" if conditions[:season_id]
       
       clauses.any? ? "WHERE #{clauses.join(' AND ')}" : ""
     end
@@ -164,11 +154,18 @@ module Service
     def build_params(conditions)
       params = []
       
+      # Required filters
+      params << conditions[:rental_location_id] if conditions[:rental_location_id]
+      params << conditions[:rate_type_id] if conditions[:rate_type_id]
+      
+      # Required nullable filter
       if conditions[:season_definition_id] && conditions[:season_definition_id].to_s.downcase != 'null'
         params << conditions[:season_definition_id]
       end
       
-      params << conditions[:rate_type_id] if conditions[:rate_type_id]
+      # Optional filter
+      params << conditions[:season_id] if conditions[:season_id]
+      
       params
     end
 

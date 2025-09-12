@@ -47,6 +47,7 @@ module UseCase
       # @return [Hash]
       #
       def process_params(params)
+        rental_location_id = params[:rental_location_id] || params['rental_location_id']
         season_definition_id = params[:season_definition_id] || params['season_definition_id']
         rate_type_id = params[:rate_type_id] || params['rate_type_id']
         season_id = params[:season_id] || params['season_id']
@@ -56,6 +57,7 @@ module UseCase
         return { 
           valid: true, 
           authorized: true, 
+          rental_location_id: rental_location_id,
           season_definition_id: season_definition_id,
           rate_type_id: rate_type_id,
           season_id: season_id,
@@ -73,6 +75,7 @@ module UseCase
       #
       def build_conditions(processed_params)
         conditions = {}
+        conditions[:rental_location_id] = processed_params[:rental_location_id] unless processed_params[:rental_location_id].nil?
         conditions[:season_definition_id] = processed_params[:season_definition_id] unless processed_params[:season_definition_id].nil?
         conditions[:rate_type_id] = processed_params[:rate_type_id] unless processed_params[:rate_type_id].nil?
         conditions[:season_id] = processed_params[:season_id] unless processed_params[:season_id].nil?
