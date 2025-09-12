@@ -38,7 +38,7 @@ module UseCase
       private
 
       def load_data(conditions)
-        @pricing_service.get_price_definitions(conditions)
+        @pricing_service.get_price_definitions_paginated(conditions)
       end
 
       #

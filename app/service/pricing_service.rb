@@ -59,8 +59,67 @@ module Service
         #{pagination_clause}
       SQL
 
-      Infraestructure::Query.run(sql, *params)
-    end
+    Infraestructure::Query.run(sql, *params)
+  end
+
+  #
+  # Get total count of price definitions with dynamic conditions
+  #
+  # @param conditions [Hash] Optional conditions like { season_definition_id: 1 }
+  # @return [Integer] Total count of records
+  #
+  def get_price_definitions_count(conditions = {})
+    where_clause = build_where_clause(conditions)
+    params = build_params(conditions)
+    
+    sql = <<-SQL
+      SELECT COUNT(DISTINCT pd.id) as total
+      FROM price_definitions pd
+      LEFT JOIN prices p ON pd.id = p.price_definition_id
+      LEFT JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
+      LEFT JOIN categories c ON crlrt.category_id = c.id
+      #{where_clause}
+    SQL
+
+    result = Infraestructure::Query.run(sql, *params)
+    result.first&.dig("total")&.to_i || 0
+  end
+
+  #
+  # Get price definitions with pagination metadata
+  #
+  # @param conditions [Hash] Optional conditions including pagination
+  # @return [Hash] Structured response with pagination metadata
+  #
+  def get_price_definitions_paginated(conditions = {})
+    # Extract pagination parameters
+    page = conditions[:page]&.to_i || 1
+    per_page = conditions[:page] ? (conditions[:per_page]&.to_i || 10) : nil
+    
+    # Get data
+    data = get_price_definitions(conditions)
+    
+    # If no pagination, return simple array
+    return data unless per_page
+    
+    # Get total count using optimized COUNT query
+    count_conditions = conditions.dup
+    count_conditions.delete(:page)
+    count_conditions.delete(:per_page)
+    total = get_price_definitions_count(count_conditions)
+    
+    # Calculate pagination metadata
+    last_page = (total.to_f / per_page).ceil
+    last_page = 1 if last_page < 1
+    
+    {
+      page: page,
+      per_page: per_page,
+      last_page: last_page,
+      total: total,
+      data: data
+    }
+  end
 
   #
   # Get unique units list for a specific season and time measurement

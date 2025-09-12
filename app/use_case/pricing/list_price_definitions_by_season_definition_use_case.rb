@@ -49,7 +49,7 @@ module UseCase
         service_conditions[:page] = conditions[:page] unless conditions[:page].nil?
         service_conditions[:per_page] = conditions[:per_page] unless conditions[:per_page].nil?
         
-        @pricing_service.get_price_definitions(service_conditions)
+        @pricing_service.get_price_definitions_paginated(service_conditions)
       end
 
       #
