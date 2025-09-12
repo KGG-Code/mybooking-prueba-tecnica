@@ -50,13 +50,17 @@ module UseCase
         season_definition_id = params[:season_definition_id] || params['season_definition_id']
         rate_type_id = params[:rate_type_id] || params['rate_type_id']
         season_id = params[:season_id] || params['season_id']
+        page = params[:page] || params['page']
+        per_page = params[:per_page] || params['per_page']
         
         return { 
           valid: true, 
           authorized: true, 
           season_definition_id: season_definition_id,
           rate_type_id: rate_type_id,
-          season_id: season_id
+          season_id: season_id,
+          page: page,
+          per_page: per_page
         }
       end
 
@@ -72,6 +76,8 @@ module UseCase
         conditions[:season_definition_id] = processed_params[:season_definition_id] unless processed_params[:season_definition_id].nil?
         conditions[:rate_type_id] = processed_params[:rate_type_id] unless processed_params[:rate_type_id].nil?
         conditions[:season_id] = processed_params[:season_id] unless processed_params[:season_id].nil?
+        conditions[:page] = processed_params[:page] unless processed_params[:page].nil?
+        conditions[:per_page] = processed_params[:per_page] unless processed_params[:per_page].nil?
         conditions
       end
 

@@ -10,6 +10,7 @@ module Service
     def get_price_definitions(conditions = {})
       where_clause = build_where_clause(conditions)
       params = build_params(conditions)
+      pagination_clause = build_pagination_clause(conditions)
       
       sql = <<-SQL
         SELECT 
@@ -55,10 +56,11 @@ module Service
         LEFT JOIN categories c ON crlrt.category_id = c.id
         #{where_clause}
         ORDER BY pd.name, p.id, crlrt.id
+        #{pagination_clause}
       SQL
 
-    Infraestructure::Query.run(sql, *params)
-  end
+      Infraestructure::Query.run(sql, *params)
+    end
 
   #
   # Get unique units list for a specific season and time measurement
@@ -113,6 +115,27 @@ module Service
       params << conditions[:rental_location_id] if conditions[:rental_location_id]
       params << conditions[:category_id] if conditions[:category_id]
       params
+    end
+
+    #
+    # Build pagination clause dynamically based on conditions
+    #
+    # @param conditions [Hash] Conditions to apply
+    # @return [String] LIMIT/OFFSET clause string
+    #
+    def build_pagination_clause(conditions)
+      return "" unless conditions[:page] && conditions[:per_page]
+      
+      page = conditions[:page].to_i
+      per_page = conditions[:per_page].to_i
+      
+      # Ensure valid values
+      page = 1 if page < 1
+      per_page = 10 if per_page < 1
+      per_page = 100 if per_page > 100  # Max limit
+      
+      offset = (page - 1) * per_page
+      "LIMIT #{per_page} OFFSET #{offset}"
     end
 
   end

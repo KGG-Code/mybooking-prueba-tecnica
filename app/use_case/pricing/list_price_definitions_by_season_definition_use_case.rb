@@ -46,6 +46,8 @@ module UseCase
         service_conditions[:season_definition_id] = conditions[:season_definition_id] unless conditions[:season_definition_id].nil?
         service_conditions[:rate_type_id] = conditions[:rate_type_id] unless conditions[:rate_type_id].nil?
         service_conditions[:season_id] = conditions[:season_id] unless conditions[:season_id].nil?
+        service_conditions[:page] = conditions[:page] unless conditions[:page].nil?
+        service_conditions[:per_page] = conditions[:per_page] unless conditions[:per_page].nil?
         
         @pricing_service.get_price_definitions(service_conditions)
       end
@@ -59,11 +61,15 @@ module UseCase
         season_definition_id = params[:season_definition_id] || params['season_definition_id']
         rate_type_id = params[:rate_type_id] || params['rate_type_id']
         season_id = params[:season_id] || params['season_id']
+        page = params[:page] || params['page']
+        per_page = params[:per_page] || params['per_page']
         
         @validator.set_schema({ 
           season_definition_id: [:required, :nullable, :int],
           rate_type_id: [:optional, :nullable, :int],
-          season_id: [:optional, :nullable, :int]
+          season_id: [:optional, :nullable, :int],
+          page: [:optional, :int],
+          per_page: [:optional, :int]
         })
         @validator.validate!(params)
 
@@ -72,7 +78,9 @@ module UseCase
           authorized: true, 
           season_definition_id: @validator.data[:season_definition_id],
           rate_type_id: @validator.data[:rate_type_id],
-          season_id: @validator.data[:season_id]
+          season_id: @validator.data[:season_id],
+          page: @validator.data[:page],
+          per_page: @validator.data[:per_page]
         }
       end
 
@@ -87,7 +95,9 @@ module UseCase
         {
           season_definition_id: processed_params[:season_definition_id],
           rate_type_id: processed_params[:rate_type_id],
-          season_id: processed_params[:season_id]
+          season_id: processed_params[:season_id],
+          page: processed_params[:page],
+          per_page: processed_params[:per_page]
         }
       end
 

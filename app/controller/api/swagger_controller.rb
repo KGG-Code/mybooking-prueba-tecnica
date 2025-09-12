@@ -562,6 +562,31 @@ module Controller
                         "description": "Integer ID or 'null' string"
                       },
                       "example": "1"
+                    },
+                    {
+                      "name": "page",
+                      "in": "query",
+                      "description": "Page number for pagination. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "default": 1
+                      },
+                      "example": 1
+                    },
+                    {
+                      "name": "per_page",
+                      "in": "query",
+                      "description": "Number of results per page. Optional parameter (max 100)",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 10
+                      },
+                      "example": 10
                     }
                   ],
                   "responses": {
@@ -652,6 +677,31 @@ module Controller
                         "description": "Integer ID or 'null' string"
                       },
                       "example": "1"
+                    },
+                    {
+                      "name": "page",
+                      "in": "query",
+                      "description": "Page number for pagination. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "default": 1
+                      },
+                      "example": 1
+                    },
+                    {
+                      "name": "per_page",
+                      "in": "query",
+                      "description": "Number of results per page. Optional parameter (max 100)",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 10
+                      },
+                      "example": 10
                     }
                   ],
                   "responses": {
