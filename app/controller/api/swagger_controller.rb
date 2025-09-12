@@ -64,6 +64,10 @@ module Controller
               {
                 "name": "Season Definitions",
                 "description": "Operations related to season definitions"
+              },
+              {
+                "name": "Seasons",
+                "description": "Operations related to seasons"
               }
             ],
             "paths": {
@@ -391,6 +395,129 @@ module Controller
                     }
                   }
                 }
+              },
+              "/api/seasons": {
+                "get": {
+                  "summary": "List all seasons",
+                  "description": "Returns a list of all seasons ordered by name",
+                  "operationId": "listSeasons",
+                  "tags": ["Seasons"],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/Season"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/seasons-by-season-definition": {
+                "get": {
+                  "summary": "List seasons by season definition",
+                  "description": "Returns seasons filtered by season definition ID",
+                  "operationId": "listSeasonsBySeasonDefinition",
+                  "tags": ["Seasons"],
+                  "parameters": [
+                    {
+                      "name": "season_definition_id",
+                      "in": "query",
+                      "description": "Season definition ID to filter seasons",
+                      "required": true,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    }
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/Season"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request - season_definition_id is required",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
               }
             },
             "components": {
@@ -442,6 +569,27 @@ module Controller
                     }
                   },
                   "required": ["id", "name"]
+                },
+                "Season": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Unique identifier for the season",
+                      "format": "int64"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the season",
+                      "maxLength": 255
+                    },
+                    "season_definition_id": {
+                      "type": "integer",
+                      "description": "ID of the associated season definition",
+                      "format": "int64"
+                    }
+                  },
+                  "required": ["id", "name", "season_definition_id"]
                 }
               }
             }
