@@ -27,6 +27,7 @@ module Controller
         app.get '/api/rate-types-by-rental-location' do
           use_case = UseCase::RateType::ListRateTypesByRentalLocationUseCase.new(
             Repository::RateTypeRepository.new,
+            Validation::Validator.new,
             logger
           )
 

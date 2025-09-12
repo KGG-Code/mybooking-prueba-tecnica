@@ -1,18 +1,23 @@
 module Validation
   #
-  # Base validator class
+  # validator class
   #
-  class BaseValidator
+  class Validator
     attr_reader :data, :errors
 
-    def initialize(params, schema)
-      @raw    = (params || {}).transform_keys(&:to_sym)
-      @schema = schema
-      @data   = {}
+    def initialize
+      @data = {}
       @errors = {}
+      @schema = {}
     end
 
-    def validate!
+    def set_schema(schema)
+      @schema = schema
+      self
+    end
+
+    def validate!(params)
+      @raw = (params || {}).transform_keys(&:to_sym)
       @schema.each do |field, rules|
         rules = Array(rules) # por si alguien pasa un solo símbolo
         value = @raw[field]

@@ -13,8 +13,9 @@ module UseCase
       # @param rate_type_repository [Repository::RateTypeRepository] The repository
       # @param logger [Logger] The logger
       #
-      def initialize(rate_type_repository, logger)
+      def initialize(rate_type_repository, validator, logger)
         @rate_type_repository = rate_type_repository
+        @validator = validator
         @logger = logger
       end
 
@@ -27,15 +28,6 @@ module UseCase
       #
       def perform(params)
         processed_params = process_params(params)
-        
-        unless processed_params[:valid]
-          return Result.new(success?: false, authorized?: true, message: processed_params[:message])
-        end
-
-        unless processed_params[:authorized]
-          return Result.new(success?: true, authorized?: false, message: 'Not authorized')
-        end
-
         conditions = build_conditions(processed_params)
         data = load_data(conditions)
         
@@ -64,20 +56,18 @@ module UseCase
 
         rental_location_id = params[:rental_location_id] || params['rental_location_id']
         
-        validator = Validation::BaseValidator.new(params, { rental_location_id: [:required, :int] })
-        validator.validate!
+        @validator.set_schema({ rental_location_id: [:required, :int] })
+        @validator.validate!(params)
 
-        return { valid: true, authorized: true, rental_location_id: validator.data[:rental_location_id] }
+        return { valid: true, authorized: true, rental_location_id: @validator.data[:rental_location_id] }
 
-      rescue Errors::ValidationError => error
-        return { valid: false, authorized: true, message: error.errors }
       end
 
       #
       # Build conditions for the query
       #
       # @param [Hash] processed_params - Processed parameters
-      #
+      #()
       # @return [Hash] Conditions hash
       #
       def build_conditions(processed_params)

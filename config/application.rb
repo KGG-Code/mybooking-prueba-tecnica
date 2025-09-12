@@ -35,7 +35,7 @@ require_relative '../lib/query'
 require_relative '../lib/transaction'
 
 # Validation classes
-require_relative '../lib/base_validator'
+require_relative '../lib/validator'
 
 # Middlewares
 require_relative "../app/middlewares/error_handler"
