@@ -73,7 +73,7 @@ module Service
     params = build_params(conditions)
     
     sql = <<-SQL
-      SELECT COUNT(DISTINCT pd.id) as total
+      SELECT COUNT(DISTINCT pd.id)
       FROM price_definitions pd
       LEFT JOIN prices p ON pd.id = p.price_definition_id
       LEFT JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
@@ -82,7 +82,7 @@ module Service
     SQL
 
     result = Infraestructure::Query.run(sql, *params)
-    result.first&.dig("total")&.to_i || 0
+    result.first&.to_i || 0
   end
 
   #
