@@ -11,7 +11,14 @@ module Service
     where_clause = build_where_clause(conditions)
     params = build_params(conditions)
     pagination_clause = build_pagination_clause(conditions)
-      
+    
+    puts "DEBUG: Where Clause:"
+    puts where_clause
+    puts "DEBUG: Params:"
+    puts params.inspect
+    puts "DEBUG: Pagination Clause:"
+    puts pagination_clause
+
       sql = <<-SQL
         SELECT 
           rl.name as rental_location_name,
@@ -19,7 +26,11 @@ module Service
           c.code as category_code, 
           c.name as category_name,
           pd.id as price_definition_id,
-          p.season_id as season_id
+          p.season_id as season_id,
+          p.units as units,
+          p.time_measurement as time_measurement,
+          p.price as price
+        
         FROM price_definitions pd
         JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
         JOIN rental_locations rl ON crlrt.rental_location_id = rl.id
@@ -27,10 +38,14 @@ module Service
         JOIN categories c ON crlrt.category_id = c.id
         LEFT JOIN prices p ON pd.id = p.price_definition_id
         #{where_clause}
-        ORDER BY pd.name
+        ORDER BY pd.name, p.units
         #{pagination_clause}
       SQL
 
+    puts "DEBUG: Final SQL Query:"
+    puts sql
+    puts "DEBUG: Parameters: #{params.inspect}"
+    
     Infraestructure::Query.run(sql, *params)
   end
 
@@ -134,13 +149,16 @@ module Service
       if conditions[:season_definition_id]
         if conditions[:season_definition_id].to_s.downcase == 'null'
           clauses << "pd.season_definition_id IS NULL"
+          clauses << "p.season_id IS NULL"
         else
           clauses << "pd.season_definition_id = ?"
+          # Only add season_id filter if season_definition_id is not null
+          clauses << "p.season_id = ?" if conditions[:season_id]
         end
+      else
+        # If season_definition_id is not provided, allow season_id filter
+        clauses << "p.season_id = ?" if conditions[:season_id]
       end
-      
-      # Optional filter
-      clauses << "p.season_id = ?" if conditions[:season_id]
       
       clauses.any? ? "WHERE #{clauses.join(' AND ')}" : ""
     end
@@ -159,12 +177,17 @@ module Service
       params << conditions[:rate_type_id] if conditions[:rate_type_id]
       
       # Required nullable filter
-      if conditions[:season_definition_id] && conditions[:season_definition_id].to_s.downcase != 'null'
-        params << conditions[:season_definition_id]
+      if conditions[:season_definition_id]
+        if conditions[:season_definition_id].to_s.downcase != 'null'
+          params << conditions[:season_definition_id]
+          # Only add season_id parameter if season_definition_id is not null
+          params << conditions[:season_id] if conditions[:season_id]
+        end
+        # If season_definition_id is 'null', don't add any parameters for season filters
+      else
+        # If season_definition_id is not provided, allow season_id parameter
+        params << conditions[:season_id] if conditions[:season_id]
       end
-      
-      # Optional filter
-      params << conditions[:season_id] if conditions[:season_id]
       
       params
     end

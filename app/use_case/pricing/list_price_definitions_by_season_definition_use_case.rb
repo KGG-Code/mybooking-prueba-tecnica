@@ -30,7 +30,6 @@ module UseCase
       def perform(params)
         
         processed_params = process_params(params)
-     
         conditions = build_conditions(processed_params)
         data = load_data(conditions)
         
@@ -67,22 +66,37 @@ module UseCase
         per_page = params[:per_page] || params['per_page']
         
         @validator.set_schema({ 
-          rental_location_id: [:optional, :nullable, :int],
-          season_definition_id: [:required, :nullable, :int],
-          rate_type_id: [:optional, :nullable, :int],
+          rental_location_id: [:optional, :int],
+          season_definition_id: [:optional, :nullable, :int],
+          rate_type_id: [:optional, :int],
           season_id: [:optional, :nullable, :int],
           page: [:optional, :int],
           per_page: [:optional, :int]
         })
         @validator.validate!(params)
 
+        # Process season_definition_id and season_id to handle null/empty values
+        season_definition_id = @validator.data[:season_definition_id]
+        season_id = @validator.data[:season_id]
+        
+        # If season_definition_id is null, empty, or 'null', treat both as null
+        if season_definition_id.nil? || season_definition_id.to_s.strip.empty? || season_definition_id.to_s.downcase == 'null'
+          season_definition_id = nil
+          season_id = nil
+        end
+        
+        # If season_id is null, empty, or 'null', treat as null
+        if season_id.nil? || season_id.to_s.strip.empty? || season_id.to_s.downcase == 'null'
+          season_id = nil
+        end
+
         return { 
           valid: true, 
           authorized: true, 
           rental_location_id: @validator.data[:rental_location_id],
-          season_definition_id: @validator.data[:season_definition_id],
+          season_definition_id: season_definition_id,
           rate_type_id: @validator.data[:rate_type_id],
-          season_id: @validator.data[:season_id],
+          season_id: season_id,
           page: @validator.data[:page],
           per_page: @validator.data[:per_page]
         }

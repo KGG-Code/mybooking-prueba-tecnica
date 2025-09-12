@@ -668,8 +668,8 @@ module Controller
                     {
                       "name": "season_definition_id",
                       "in": "query",
-                      "description": "Season definition ID to filter price definitions. Pass 'null' to get price definitions without season definition",
-                      "required": true,
+                      "description": "Season definition ID to filter price definitions. Pass 'null' to get price definitions without season definition. Optional parameter",
+                      "required": false,
                       "schema": {
                         "type": "string",
                         "description": "Integer ID or 'null' string"
