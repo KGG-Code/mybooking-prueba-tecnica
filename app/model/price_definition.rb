@@ -13,6 +13,10 @@ module Model
      belongs_to :rate_type, 'Model::RateType', required: true
      belongs_to :season_definition, 'Model::SeasonDefinition', required: false
 
+     # Relationships
+     has n, :category_rental_location_rate_types, 'Model::CategoryRentalLocationRateType'
+     has n, :prices, 'Model::Price'
+
      property :excess, Decimal, precision: 10, scale: 2
      property :deposit, Decimal, precision: 10, scale: 2
 
