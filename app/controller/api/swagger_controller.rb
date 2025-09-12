@@ -68,6 +68,10 @@ module Controller
               {
                 "name": "Seasons",
                 "description": "Operations related to seasons"
+              },
+              {
+                "name": "Pricing",
+                "description": "Operations related to price definitions"
               }
             ],
             "paths": {
@@ -518,6 +522,129 @@ module Controller
                     }
                   }
                 }
+              },
+              "/api/price-definitions": {
+                "get": {
+                  "summary": "List all price definitions",
+                  "description": "Returns a list of all price definitions ordered by name",
+                  "operationId": "listPriceDefinitions",
+                  "tags": ["Pricing"],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/PriceDefinition"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/price-definitions-by-season-definition": {
+                "get": {
+                  "summary": "List price definitions by season definition",
+                  "description": "Returns price definitions filtered by season definition ID. Pass 'null' to get price definitions without season definition",
+                  "operationId": "listPriceDefinitionsBySeasonDefinition",
+                  "tags": ["Pricing"],
+                  "parameters": [
+                    {
+                      "name": "season_definition_id",
+                      "in": "query",
+                      "description": "Season definition ID to filter price definitions. Pass 'null' to get price definitions without season definition",
+                      "required": true,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    }
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/PriceDefinition"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request - season_definition_id is required",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
               }
             },
             "components": {
@@ -590,6 +717,48 @@ module Controller
                     }
                   },
                   "required": ["id", "name", "season_definition_id"]
+                },
+                "PriceDefinition": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Unique identifier for the price definition",
+                      "format": "int64"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the price definition",
+                      "maxLength": 255
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Type of price definition",
+                      "enum": ["season", "no_season"]
+                    },
+                    "rate_type_id": {
+                      "type": "integer",
+                      "description": "ID of the associated rate type",
+                      "format": "int64"
+                    },
+                    "season_definition_id": {
+                      "type": "integer",
+                      "description": "ID of the associated season definition",
+                      "format": "int64",
+                      "nullable": true
+                    },
+                    "excess": {
+                      "type": "number",
+                      "description": "Excess amount",
+                      "format": "decimal"
+                    },
+                    "deposit": {
+                      "type": "number",
+                      "description": "Deposit amount",
+                      "format": "decimal"
+                    }
+                  },
+                  "required": ["id", "name", "type", "rate_type_id"]
                 }
               }
             }

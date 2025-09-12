@@ -27,10 +27,11 @@ module Validation
         rules.each do |rule|
           case rule
           when :required then check_required(field, value)
-          when :int      then check_type(field, value, Integer)
-          when :float    then check_type(field, value, Float)
-          when :string   then check_type(field, value, String)
-          when :boolean  then check_boolean(field, value)
+          when :nullable then check_nullable(field, value)
+          when :int      then check_type_if_not_null(field, value, Integer)
+          when :float    then check_type_if_not_null(field, value, Float)
+          when :string   then check_type_if_not_null(field, value, String)
+          when :boolean  then check_boolean_if_not_null(field, value)
           when :optional then next
           else
             raise ArgumentError, "Unknown rule: #{rule}"
@@ -55,8 +56,30 @@ module Validation
       end
     end
 
-    def check_type(field, value, klass)
+    def check_nullable(field, value)
+      # In Laravel, nullable means the field can be null, but if it has a value,
+      # it must be valid according to other rules
+      # This method just allows null values, validation happens in other rules
       return if value.nil? || value == ""
+      
+      # Check if value is "null" string (explicit null)
+      if value.to_s.downcase == "null"
+        @data[field] = nil
+        return
+      end
+      
+      # For nullable, we don't validate the type here, other rules will do that
+      # We just handle the "null" string case
+    end
+
+    def check_type_if_not_null(field, value, klass)
+      # Skip validation if value is null (nullable fields)
+      return if value.nil? || value == ""
+      
+      # Check if value is "null" string (explicit null)
+      if value.to_s.downcase == "null"
+        return
+      end
       
       # Intentar convertir el valor
       begin
@@ -75,8 +98,15 @@ module Validation
       end
     end
 
-    def check_boolean(field, value)
+    def check_boolean_if_not_null(field, value)
+      # Skip validation if value is null (nullable fields)
       return if value.nil? || value == ""
+      
+      # Check if value is "null" string (explicit null)
+      if value.to_s.downcase == "null"
+        return
+      end
+      
       unless ["true", "false", true, false, "1", "0", 1, 0].include?(value)
         add_error(field, "must be boolean")
       end
@@ -90,6 +120,23 @@ module Validation
           Integer(value)
         rescue ArgumentError
           value # Si no se puede convertir, devolver el valor original
+        end
+      elsif rules.include?(:nullable)
+        if value.to_s.downcase == "null"
+          nil
+        else
+          # Try to convert to integer first
+          begin
+            Integer(value)
+          rescue ArgumentError
+            # Try to convert to float
+            begin
+              Float(value)
+            rescue ArgumentError
+              # Accept as string
+              value.to_s
+            end
+          end
         end
       elsif rules.include?(:float)
         begin
