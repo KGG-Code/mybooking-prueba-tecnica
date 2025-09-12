@@ -11,6 +11,7 @@ module UseCase
       # Initialize the use case
       #
       # @param rate_type_repository [Repository::RateTypeRepository] The repository
+      # @param validator [Object] Must respond to set_schema, validate!, data (duck typing)
       # @param logger [Logger] The logger
       #
       def initialize(rate_type_repository, validator, logger)

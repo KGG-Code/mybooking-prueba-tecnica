@@ -25,6 +25,9 @@ module Controller
 
         # REST API end-point to list rate types filtered by rental location
         app.get '/api/rate-types-by-rental-location' do
+          # You can easily switch between validators:
+          # Validation::Validator.new        - Custom validator
+          # Validation::DryValidator.new     - Dry-validation based validator
           use_case = UseCase::RateType::ListRateTypesByRentalLocationUseCase.new(
             Repository::RateTypeRepository.new,
             Validation::Validator.new,

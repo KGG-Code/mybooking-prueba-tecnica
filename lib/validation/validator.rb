@@ -1,6 +1,7 @@
 module Validation
   #
-  # validator class
+  # Custom validator class
+  # Must implement: set_schema(schema), validate!(params), data
   #
   class Validator
     attr_reader :data, :errors
