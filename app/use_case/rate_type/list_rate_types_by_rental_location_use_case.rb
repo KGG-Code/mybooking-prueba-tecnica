@@ -68,7 +68,7 @@ module UseCase
       # Build conditions for the query
       #
       # @param [Hash] processed_params - Processed parameters
-      #()
+      #
       # @return [Hash] Conditions hash
       #
       def build_conditions(processed_params)

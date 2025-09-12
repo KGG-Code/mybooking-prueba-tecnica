@@ -60,6 +60,10 @@ module Controller
               {
                 "name": "Rate Types",
                 "description": "Operations related to rate types"
+              },
+              {
+                "name": "Season Definitions",
+                "description": "Operations related to season definitions"
               }
             ],
             "paths": {
@@ -253,6 +257,140 @@ module Controller
                     }
                   }
                 }
+              },
+              "/api/season-definitions": {
+                "get": {
+                  "summary": "List all season definitions",
+                  "description": "Returns a list of all season definitions ordered by name",
+                  "operationId": "listSeasonDefinitions",
+                  "tags": ["Season Definitions"],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/SeasonDefinition"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/season-definitions-by-rate-type": {
+                "get": {
+                  "summary": "List season definitions by rate type and rental location",
+                  "description": "Returns season definitions filtered by rate type and rental location based on price definitions",
+                  "operationId": "listSeasonDefinitionsByRateType",
+                  "tags": ["Season Definitions"],
+                  "parameters": [
+                    {
+                      "name": "rate_type_id",
+                      "in": "query",
+                      "description": "Rate type ID to filter season definitions",
+                      "required": true,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    },
+                    {
+                      "name": "rental_location_id",
+                      "in": "query",
+                      "description": "Rental location ID to filter season definitions",
+                      "required": true,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    }
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/SeasonDefinition"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request - rate_type_id and rental_location_id are required",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
               }
             },
             "components": {
@@ -284,6 +422,22 @@ module Controller
                     "name": {
                       "type": "string",
                       "description": "Name of the rate type",
+                      "maxLength": 255
+                    }
+                  },
+                  "required": ["id", "name"]
+                },
+                "SeasonDefinition": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Unique identifier for the season definition",
+                      "format": "int64"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the season definition",
                       "maxLength": 255
                     }
                   },
