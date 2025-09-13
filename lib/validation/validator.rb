@@ -32,6 +32,7 @@ module Validation
           when :float    then check_type_if_not_null(field, value, Float)
           when :string   then check_type_if_not_null(field, value, String)
           when :boolean  then check_boolean_if_not_null(field, value)
+          when Array then check_enum_if_not_null(field, value, rule[1..-1]) if rule.first == :enum
           when :optional then next
           else
             raise ArgumentError, "Unknown rule: #{rule}"
@@ -146,10 +147,44 @@ module Validation
         end
       elsif rules.include?(:boolean)
         ["true", "1", 1, true].include?(value)
+      elsif rules.any? { |rule| rule.is_a?(Array) && rule.first == :enum }
+        # Find the enum rule and get its values
+        enum_rule = rules.find { |rule| rule.is_a?(Array) && rule.first == :enum }
+        valid_values = enum_rule[1..-1]
+        # Try to convert to integer first (for numeric enums)
+        begin
+          Integer(value)
+        rescue ArgumentError
+          # If not an integer, return as string
+          value.to_s
+        end
       elsif rules.include?(:string)
         value.to_s.strip
       else
         value
+      end
+    end
+
+    def check_enum_if_not_null(field, value, valid_values)
+      # Skip validation if value is null (nullable fields)
+      return if value.nil? || value == ""
+      
+      # Check if value is "null" string (explicit null)
+      if value.to_s.downcase == "null"
+        return
+      end
+      
+      # Try to convert to integer first (for numeric enums)
+      begin
+        enum_value = Integer(value)
+        unless valid_values.include?(enum_value)
+          add_error(field, "must be one of: #{valid_values.join(', ')}")
+        end
+      rescue ArgumentError
+        # If not an integer, check as string
+        unless valid_values.include?(value) || valid_values.include?(value.to_s)
+          add_error(field, "must be one of: #{valid_values.join(', ')}")
+        end
       end
     end
 

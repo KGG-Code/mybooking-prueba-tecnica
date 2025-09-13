@@ -597,6 +597,19 @@ module Controller
                         "default": 10
                       },
                       "example": 10
+                    },
+                    {
+                      "name": "unit",
+                      "in": "query",
+                      "description": "Time unit to filter prices. Optional parameter. 1 = meses, 2 = días, 3 = horas, 4 = minutos",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 4,
+                        "description": "Time unit for filtering prices: 1=meses, 2=días, 3=horas, 4=minutos"
+                      },
+                      "example": 2
                     }
                   ],
                   "responses": {
@@ -722,6 +735,19 @@ module Controller
                         "default": 10
                       },
                       "example": 10
+                    },
+                    {
+                      "name": "unit",
+                      "in": "query",
+                      "description": "Time unit to filter prices. Optional parameter. 1 = meses, 2 = días, 3 = horas, 4 = minutos",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 4,
+                        "description": "Time unit for filtering prices: 1=meses, 2=días, 3=horas, 4=minutos"
+                      },
+                      "example": 2
                     }
                   ],
                   "responses": {

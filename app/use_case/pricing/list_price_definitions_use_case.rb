@@ -1,3 +1,5 @@
+require_relative '../../constants/time_unit_constants'
+
 module UseCase
   module Pricing
     #
@@ -11,10 +13,12 @@ module UseCase
       # Initialize the use case
       #
       # @param [Service::PricingService] pricing_service
+      # @param [Validation::Validator] validator
       # @param [Logger] logger
       #
-      def initialize(pricing_service, logger)
+      def initialize(pricing_service, validator, logger)
         @pricing_service = pricing_service
+        @validator = validator
         @logger = logger
       end
 
@@ -51,18 +55,31 @@ module UseCase
         season_definition_id = params[:season_definition_id] || params['season_definition_id']
         rate_type_id = params[:rate_type_id] || params['rate_type_id']
         season_id = params[:season_id] || params['season_id']
+        unit = params[:unit] || params['unit']
         page = params[:page] || params['page']
         per_page = params[:per_page] || params['per_page']
+        
+        @validator.set_schema({ 
+          rental_location_id: [:optional, :int],
+          season_definition_id: [:optional, :nullable, :int],
+          rate_type_id: [:optional, :int],
+          season_id: [:optional, :nullable, :int],
+          unit: [:optional, [:enum, *TimeUnitConstants::VALID_TIME_UNITS]],
+          page: [:optional, :int],
+          per_page: [:optional, :int]
+        })
+        @validator.validate!(params)
         
         return { 
           valid: true, 
           authorized: true, 
-          rental_location_id: rental_location_id,
-          season_definition_id: season_definition_id,
-          rate_type_id: rate_type_id,
-          season_id: season_id,
-          page: page,
-          per_page: per_page
+          rental_location_id: @validator.data[:rental_location_id],
+          season_definition_id: @validator.data[:season_definition_id],
+          rate_type_id: @validator.data[:rate_type_id],
+          season_id: @validator.data[:season_id],
+          unit: @validator.data[:unit],
+          page: @validator.data[:page],
+          per_page: @validator.data[:per_page]
         }
       end
 
@@ -79,6 +96,7 @@ module UseCase
         conditions[:season_definition_id] = processed_params[:season_definition_id] unless processed_params[:season_definition_id].nil?
         conditions[:rate_type_id] = processed_params[:rate_type_id] unless processed_params[:rate_type_id].nil?
         conditions[:season_id] = processed_params[:season_id] unless processed_params[:season_id].nil?
+        conditions[:unit] = processed_params[:unit] unless processed_params[:unit].nil?
         conditions[:page] = processed_params[:page] unless processed_params[:page].nil?
         conditions[:per_page] = processed_params[:per_page] unless processed_params[:per_page].nil?
         conditions

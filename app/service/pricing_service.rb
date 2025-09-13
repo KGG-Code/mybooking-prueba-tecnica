@@ -1,4 +1,5 @@
 require 'json'
+require_relative '../constants/time_unit_constants'
 
 module Service
   class PricingService
@@ -167,6 +168,11 @@ module Service
         clauses << "p.season_id = ?"
       end
       
+      # Optional unit filter (time_measurement)
+      if conditions[:unit]
+        clauses << "p.time_measurement = ?"
+      end
+      
       clauses.any? ? "WHERE #{clauses.join(' AND ')}" : ""
     end
 
@@ -193,6 +199,9 @@ module Service
       
       # Optional season_id filter
       params << conditions[:season_id] if conditions[:season_id]
+      
+      # Optional unit filter
+      params << conditions[:unit] if conditions[:unit]
       
       params
     end

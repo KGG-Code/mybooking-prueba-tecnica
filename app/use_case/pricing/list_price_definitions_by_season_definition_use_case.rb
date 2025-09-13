@@ -1,3 +1,5 @@
+require_relative '../../constants/time_unit_constants'
+
 module UseCase
   module Pricing
     #
@@ -46,6 +48,7 @@ module UseCase
         service_conditions[:season_definition_id] = conditions[:season_definition_id] unless conditions[:season_definition_id].nil?
         service_conditions[:rate_type_id] = conditions[:rate_type_id] unless conditions[:rate_type_id].nil?
         service_conditions[:season_id] = conditions[:season_id] unless conditions[:season_id].nil?
+        service_conditions[:unit] = conditions[:unit] unless conditions[:unit].nil?
         service_conditions[:page] = conditions[:page] unless conditions[:page].nil?
         service_conditions[:per_page] = conditions[:per_page] unless conditions[:per_page].nil?
         
@@ -70,6 +73,7 @@ module UseCase
           season_definition_id: [:optional, :nullable, :int],
           rate_type_id: [:optional, :int],
           season_id: [:optional, :nullable, :int],
+          unit: [:optional, [:enum, *TimeUnitConstants::VALID_TIME_UNITS]],
           page: [:optional, :int],
           per_page: [:optional, :int]
         })
@@ -97,6 +101,7 @@ module UseCase
           season_definition_id: season_definition_id,
           rate_type_id: @validator.data[:rate_type_id],
           season_id: season_id,
+          unit: @validator.data[:unit],
           page: @validator.data[:page],
           per_page: @validator.data[:per_page]
         }
@@ -115,6 +120,7 @@ module UseCase
           season_definition_id: processed_params[:season_definition_id],
           rate_type_id: processed_params[:rate_type_id],
           season_id: processed_params[:season_id],
+          unit: processed_params[:unit],
           page: processed_params[:page],
           per_page: processed_params[:per_page]
         }

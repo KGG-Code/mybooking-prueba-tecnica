@@ -5,7 +5,8 @@ module Controller
         # REST API end-point to list price definitions with optional filters
         app.get '/api/pricing' do
           service = Service::PricingService.new
-          use_case = UseCase::Pricing::ListPriceDefinitionsUseCase.new(service, logger)
+          validator = Validation::Validator.new
+          use_case = UseCase::Pricing::ListPriceDefinitionsUseCase.new(service, validator, logger)
 
           result = use_case.perform(params)
 
