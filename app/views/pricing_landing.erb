@@ -80,12 +80,7 @@
               <thead>
                 <tr>
                   <th scope="col">Categoría</th>
-                  <th scope="col" class="text-end">1</th>
-                  <th scope="col" class="text-end">2</th>
-                  <th scope="col" class="text-end">4</th>
-                  <th scope="col" class="text-end">8</th>
-                  <th scope="col" class="text-end">15</th>
-                  <th scope="col" class="text-end">30</th>
+                  <!-- Las columnas de unidades se generarán dinámicamente -->
                 </tr>
               </thead>
               <tbody>
@@ -308,44 +303,89 @@
 
         showLoading();
 
-        let url = '/api/filtered-pricing?';
-        url += `rental_location_id=${rentalLocationId}&rate_type_id=${rateTypeId}`;
+        // Primero obtener las unidades disponibles
+        let unitsUrl = '/api/units-list?';
+        unitsUrl += `rental_location_id=${rentalLocationId}&rate_type_id=${rateTypeId}`;
         
         if (seasonDefinitionId) {
-          url += `&season_definition_id=${seasonDefinitionId}`;
+          unitsUrl += `&season_definition_id=${seasonDefinitionId}`;
         }
         if (seasonId) {
-          url += `&season_id=${seasonId}`;
+          unitsUrl += `&season_id=${seasonId}`;
         }
         if (unit) {
-          url += `&unit=${unit}`;
-        }
-        if (perPage) {
-          url += `&per_page=${perPage}`;
+          unitsUrl += `&unit=${unit}`;
         }
 
         $.ajax({
-          url: url,
+          url: unitsUrl,
           method: 'GET',
-          success: function(data) {
-            populatePricingTable(data);
-            hideLoading();
+          success: function(unitsResponse) {
+            const availableUnits = unitsResponse.units ? unitsResponse.units.split(',').map(u => parseInt(u)) : [];
+            
+            // Generar columnas dinámicamente
+            generateTableHeaders(availableUnits);
+            
+            // Ahora cargar los datos de precios
+            let pricingUrl = '/api/filtered-pricing?';
+            pricingUrl += `rental_location_id=${rentalLocationId}&rate_type_id=${rateTypeId}`;
+            
+            if (seasonDefinitionId) {
+              pricingUrl += `&season_definition_id=${seasonDefinitionId}`;
+            }
+            if (seasonId) {
+              pricingUrl += `&season_id=${seasonId}`;
+            }
+            if (unit) {
+              pricingUrl += `&unit=${unit}`;
+            }
+            if (perPage) {
+              pricingUrl += `&per_page=${perPage}`;
+            }
+
+            $.ajax({
+              url: pricingUrl,
+              method: 'GET',
+              success: function(data) {
+                populatePricingTable(data, availableUnits);
+                hideLoading();
+              },
+              error: function(xhr) {
+                console.error('Error cargando datos de precios:', xhr.responseText);
+                alert('Error cargando los datos de precios');
+                hideLoading();
+              }
+            });
           },
           error: function(xhr) {
-            console.error('Error cargando datos de precios:', xhr.responseText);
-            alert('Error cargando los datos de precios');
+            console.error('Error cargando unidades:', xhr.responseText);
+            alert('Error cargando las unidades disponibles');
             hideLoading();
           }
         });
       }
 
+      // Generar cabeceras de tabla dinámicamente
+      function generateTableHeaders(availableUnits) {
+        const thead = $('#prices_table thead tr');
+        thead.empty();
+        
+        // Añadir columna de categoría
+        thead.append('<th scope="col">Categoría</th>');
+        
+        // Añadir columnas de unidades
+        availableUnits.forEach(unit => {
+          thead.append(`<th scope="col" class="text-end">${unit}</th>`);
+        });
+      }
+
       // Poblar la tabla de precios
-      function populatePricingTable(data) {
+      function populatePricingTable(data, availableUnits) {
         const tbody = $('#prices_table tbody');
         tbody.empty();
 
         if (data.length === 0) {
-          tbody.append('<tr><td colspan="7" class="text-center text-muted">No hay datos disponibles</td></tr>');
+          tbody.append('<tr><td colspan="' + (availableUnits.length + 1) + '" class="text-center text-muted">No hay datos disponibles</td></tr>');
           updateTableInfo(0, 0, 0);
           return;
         }
@@ -354,9 +394,8 @@
           const row = $('<tr>');
           row.append(`<th scope="row">${item.category_code}</th>`);
           
-          // Crear columnas para cada unidad (1, 2, 4, 8, 15, 30)
-          const units = [1, 2, 4, 8, 15, 30];
-          units.forEach(unit => {
+          // Crear columnas para cada unidad disponible
+          availableUnits.forEach(unit => {
             const price = findPriceForUnit(item.prices, unit);
             row.append(`<td class="text-end">${price || '-'}</td>`);
           });
