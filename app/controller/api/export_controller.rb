@@ -1,8 +1,4 @@
-# frozen_string_literal: true
 require 'tempfile'
-require_relative '../../service/export_prices_csv'
-require_relative '../../use_case/export/export_prices_use_case'
-require_relative '../../errors/export_error'
 
 module Controller
   module Api
@@ -11,6 +7,7 @@ module Controller
         
         # Endpoint para descargar CSV de precios (TODOS los precios)
         app.get '/api/export/prices.csv' do
+          
           content_type "text/csv"
           attachment "precios_export.csv"  # fuerza descarga
 
@@ -22,9 +19,9 @@ module Controller
           begin
             # Usar el use case para la exportación
             pricing_service = Service::PricingService.new
-            export_service = ExportPricesCsv
+            export_service = Service::ExportPricesCsv.new
             validator = Validation::Validator.new
-            use_case = UseCase::Export::ExportPricesUseCase.new(pricing_service, export_service, validator, logger)
+            use_case = UseCase::Export::ExportPricesCsvUseCase.new(pricing_service, export_service, validator, logger)
             result = use_case.perform(tmp_path)
             
             if result.success?
@@ -49,13 +46,14 @@ module Controller
 
         # Endpoint para obtener información sobre la exportación (JSON)
         app.get '/api/export/prices/info' do
+          
           content_type :json
           
           Tempfile.create(['precios_info', '.csv']) do |tmp|
             pricing_service = Service::PricingService.new
-            export_service = ExportPricesCsv.new(logger: logger)
+            export_service = Service::ExportPricesCsv.new
             validator = Validation::Validator.new
-            use_case = UseCase::Export::ExportPricesUseCase.new(pricing_service, export_service, validator, logger)
+            use_case = UseCase::Export::ExportPricesCsvUseCase.new(pricing_service, export_service, validator, logger)
             result = use_case.perform(tmp.path)
             
             if result.success?
