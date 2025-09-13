@@ -70,10 +70,10 @@ module UseCase
         
         @validator.set_schema({ 
           rental_location_id: [:optional, :int],
-          season_definition_id: [:optional, :nullable, :int],
+          season_definition_id: [:required, :nullable, :int],
           rate_type_id: [:optional, :int],
-          season_id: [:optional, :nullable, :int],
-          unit: [:optional, [:enum, *TimeUnitConstants::VALID_TIME_UNITS]],
+          season_id: [:required, :nullable, :int],
+          unit: [:required, [:enum, *TimeUnitConstants::VALID_TIME_UNITS]],
           page: [:optional, :int],
           per_page: [:optional, :int]
         })
