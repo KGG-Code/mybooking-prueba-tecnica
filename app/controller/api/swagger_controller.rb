@@ -72,6 +72,10 @@ module Controller
               {
                 "name": "Pricing",
                 "description": "Operations related to price definitions"
+              },
+              {
+                "name": "Export",
+                "description": "Operations related to data export"
               }
             ],
             "paths": {
@@ -788,6 +792,112 @@ module Controller
                             "type": "object",
                             "properties": {
                               "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/export/prices.csv": {
+                "get": {
+                  "summary": "Export all prices to CSV",
+                  "description": "Downloads a CSV file containing all price data with category, rental location, rate type, season, and pricing information",
+                  "operationId": "exportPricesCsv",
+                  "tags": ["Export"],
+                  "responses": {
+                    "200": {
+                      "description": "CSV file download",
+                      "content": {
+                        "text/csv": {
+                          "schema": {
+                            "type": "string",
+                            "format": "binary"
+                          }
+                        }
+                      },
+                      "headers": {
+                        "Content-Disposition": {
+                          "description": "Attachment filename",
+                          "schema": {
+                            "type": "string",
+                            "example": "attachment; filename=\"precios_export.csv\""
+                          }
+                        }
+                      }
+                    },
+                    "500": {
+                      "description": "Internal server error",
+                      "content": {
+                        "text/plain": {
+                          "schema": {
+                            "type": "string",
+                            "description": "Error message"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/export/prices/info": {
+                "get": {
+                  "summary": "Get export information",
+                  "description": "Returns information about the price export including total records and file size",
+                  "operationId": "getExportInfo",
+                  "tags": ["Export"],
+                  "responses": {
+                    "200": {
+                      "description": "Export information",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Export status",
+                                "example": "success"
+                              },
+                              "total_records": {
+                                "type": "integer",
+                                "description": "Total number of price records",
+                                "example": 67
+                              },
+                              "file_size_bytes": {
+                                "type": "integer",
+                                "description": "File size in bytes",
+                                "example": 2594
+                              },
+                              "export_timestamp": {
+                                "type": "string",
+                                "format": "date-time",
+                                "description": "Export timestamp in ISO 8601 format",
+                                "example": "2025-09-13T14:16:20Z"
+                              }
+                            },
+                            "required": ["status", "total_records", "file_size_bytes", "export_timestamp"]
+                          }
+                        }
+                      }
+                    },
+                    "500": {
+                      "description": "Internal server error",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Error status",
+                                "example": "error"
+                              },
+                              "message": {
                                 "type": "string",
                                 "description": "Error message"
                               }
