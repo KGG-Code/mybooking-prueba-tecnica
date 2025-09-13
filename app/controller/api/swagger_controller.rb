@@ -68,6 +68,10 @@ module Controller
               {
                 "name": "Seasons",
                 "description": "Operations related to seasons"
+              },
+              {
+                "name": "Pricing",
+                "description": "Operations related to price definitions"
               }
             ],
             "paths": {
@@ -518,6 +522,282 @@ module Controller
                     }
                   }
                 }
+              },
+              "/api/pricing": {
+                "get": {
+                  "summary": "List price definitions with optional filters",
+                  "description": "Returns a list of price definitions with optional filtering capabilities",
+                  "operationId": "listPricing",
+                  "tags": ["Pricing"],
+                  "parameters": [
+                    {
+                      "name": "rental_location_id",
+                      "in": "query",
+                      "description": "Rental location ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "integer"
+                      },
+                      "example": 1
+                    },
+                    {
+                      "name": "season_definition_id",
+                      "in": "query",
+                      "description": "Season definition ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "rate_type_id",
+                      "in": "query",
+                      "description": "Rate type ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "season_id",
+                      "in": "query",
+                      "description": "Season ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "page",
+                      "in": "query",
+                      "description": "Page number for pagination. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "default": 1
+                      },
+                      "example": 1
+                    },
+                    {
+                      "name": "per_page",
+                      "in": "query",
+                      "description": "Number of results per page. Optional parameter (max 100)",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 10
+                      },
+                      "example": 10
+                    },
+                    {
+                      "name": "unit",
+                      "in": "query",
+                      "description": "Time unit to filter prices. Optional parameter. 1 = meses, 2 = días, 3 = horas, 4 = minutos",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 4,
+                        "description": "Time unit for filtering prices: 1=meses, 2=días, 3=horas, 4=minutos"
+                      },
+                      "example": 2
+                    }
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/PriceDefinition"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/filtered-pricing": {
+                "get": {
+                  "summary": "List price definitions with mandatory filters",
+                  "description": "Returns price definitions filtered by mandatory season definition ID, with optional rate type ID and season ID filters",
+                  "operationId": "listFilteredPricing",
+                  "tags": ["Pricing"],
+                  "parameters": [
+                    {
+                      "name": "rental_location_id",
+                      "in": "query",
+                      "description": "Rental location ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "integer"
+                      },
+                      "example": 1
+                    },
+                    {
+                      "name": "season_definition_id",
+                      "in": "query",
+                      "description": "Season definition ID to filter price definitions. Pass 'null' to get price definitions without season definition. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "rate_type_id",
+                      "in": "query",
+                      "description": "Rate type ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "season_id",
+                      "in": "query",
+                      "description": "Season ID to filter price definitions. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "string",
+                        "description": "Integer ID or 'null' string"
+                      },
+                      "example": "1"
+                    },
+                    {
+                      "name": "page",
+                      "in": "query",
+                      "description": "Page number for pagination. Optional parameter",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "default": 1
+                      },
+                      "example": 1
+                    },
+                    {
+                      "name": "per_page",
+                      "in": "query",
+                      "description": "Number of results per page. Optional parameter (max 100)",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 10
+                      },
+                      "example": 10
+                    },
+                    {
+                      "name": "unit",
+                      "in": "query",
+                      "description": "Time unit to filter prices. Optional parameter. 1 = meses, 2 = días, 3 = horas, 4 = minutos",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 4,
+                        "description": "Time unit for filtering prices: 1=meses, 2=días, 3=horas, 4=minutos"
+                      },
+                      "example": 2
+                    }
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/PriceDefinition"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request - season_definition_id is required",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
               }
             },
             "components": {
@@ -590,6 +870,53 @@ module Controller
                     }
                   },
                   "required": ["id", "name", "season_definition_id"]
+                },
+                "PriceDefinition": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Unique identifier for the price definition",
+                      "format": "int64"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Name of the price definition",
+                      "maxLength": 255
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "Type of price definition",
+                      "enum": ["season", "no_season"]
+                    },
+                    "rental_location_id": {
+                      "type": "integer",
+                      "description": "ID of the associated rental location",
+                      "format": "int64"
+                    },
+                    "rate_type_id": {
+                      "type": "integer",
+                      "description": "ID of the associated rate type",
+                      "format": "int64"
+                    },
+                    "season_definition_id": {
+                      "type": "integer",
+                      "description": "ID of the associated season definition",
+                      "format": "int64",
+                      "nullable": true
+                    },
+                    "excess": {
+                      "type": "number",
+                      "description": "Excess amount",
+                      "format": "decimal"
+                    },
+                    "deposit": {
+                      "type": "number",
+                      "description": "Deposit amount",
+                      "format": "decimal"
+                    }
+                  },
+                  "required": ["id", "name", "type", "rental_location_id", "rate_type_id"]
                 }
               }
             }
