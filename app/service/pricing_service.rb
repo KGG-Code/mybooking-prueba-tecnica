@@ -13,62 +13,64 @@ module Service
     where_clause = build_where_clause(conditions)
     params = build_params(conditions)
     pagination_clause = build_pagination_clause(conditions)
-    
-    puts "DEBUG: Where Clause:"
-    puts where_clause
-    puts "DEBUG: Params:"
-    puts params.inspect
-    puts "DEBUG: Pagination Clause:"
-    puts pagination_clause
 
-      sql = <<-SQL
-        SELECT 
-          rl.name as rental_location_name,
-          rt.name as rate_type_name,
-          c.code as category_code, 
-          c.name as category_name,
-          pd.id as price_definition_id,
-          JSON_ARRAYAGG(
-            CASE 
-              WHEN p.id IS NOT NULL THEN
-                JSON_OBJECT(
-                  'season_id', p.season_id,
-                  'units', p.units,
-                  'time_measurement', p.time_measurement,
-                  'price', p.price
-                )
-              ELSE NULL
-            END
-          ) as prices
+    sql = <<-SQL
+      SELECT
+        rl.name as rental_location_name,
+        rt.name as rate_type_name,
+        c.code as category_code,
+        c.name as category_name,
+        pd.id as price_definition_id,
+        GROUP_CONCAT(
+          CONCAT(
+            '{"season_id":', p.season_id,
+            ',"units":', p.units,
+            ',"time_measurement":', p.time_measurement,
+            ',"price":', p.price, '}'
+          ) SEPARATOR ','
+        ) as prices_json_string
         
-        FROM price_definitions pd
-        JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
-        JOIN rental_locations rl ON crlrt.rental_location_id = rl.id
-        JOIN rate_types rt ON crlrt.rate_type_id = rt.id
-        JOIN categories c ON crlrt.category_id = c.id
-        LEFT JOIN prices p ON pd.id = p.price_definition_id
-        #{where_clause}
-        GROUP BY pd.id, rl.id, rt.id, c.id
-        ORDER BY pd.name, p.units
-        #{pagination_clause}
-      SQL
+      FROM categories c
+      JOIN category_rental_location_rate_types crlrt
+        ON crlrt.category_id = c.id
+      JOIN rental_locations rl
+        ON crlrt.rental_location_id = rl.id
+      JOIN rate_types rt
+        ON crlrt.rate_type_id = rt.id
+      JOIN price_definitions pd
+        ON pd.id = crlrt.price_definition_id
+      JOIN prices p
+        ON p.price_definition_id = pd.id
+      #{where_clause}
+      GROUP BY c.id, c.code, c.name, rl.name, rt.name, pd.id
+      ORDER BY c.code
+      #{pagination_clause}
+    SQL
 
-    puts "DEBUG: Final SQL Query:"
-    puts sql
-    puts "DEBUG: Parameters: #{params.inspect}"
-    
     results = Infraestructure::Query.run(sql, *params)
     
-    # Process results to parse JSON, filter null values, and sort by units
+    # Process results to convert JSON_ARRAYAGG to array format
     results.map do |row|
-      if row['prices']
-        parsed_prices = JSON.parse(row['prices'])
-        # Filter out null values from JSON_ARRAYAGG and sort by units
-        row['prices'] = parsed_prices.compact.sort_by { |price| price['units'].to_i }
+      category_hash = row.to_h
+      
+      # Convert prices_json_string to prices array
+      prices_json_value = category_hash['prices_json_string'] || category_hash[:prices_json_string]
+      if prices_json_value && !prices_json_value.nil?
+        # Wrap the concatenated JSON objects in an array
+        json_array_string = "[#{prices_json_value}]"
+        prices_array = JSON.parse(json_array_string)
+        # Sort by units
+        prices_array = prices_array.sort_by { |price| price['units'].to_i }
+        
+        category_hash['prices'] = prices_array
       else
-        row['prices'] = []
+        category_hash['prices'] = []
       end
-      row
+      
+      # Remove the prices_json_string field as it's not needed in the response
+      category_hash.delete('prices_json_string')
+      category_hash.delete(:prices_json_string)
+      category_hash
     end
   end
 
@@ -133,23 +135,6 @@ module Service
     }
   end
 
-  #
-  # Get unique units list for a specific season and time measurement
-  #
-  # @param season_id [Integer] Season ID to filter by
-  # @param time_measurement [Integer] Time measurement to filter by
-  # @return [Array] Array with units_list result
-  #
-  def get_units_list_by_season_and_time_measurement(season_id, time_measurement)
-    sql = <<-SQL
-      SELECT GROUP_CONCAT(DISTINCT units ORDER BY units SEPARATOR ',') AS units_list
-      FROM prices
-      WHERE season_id = ?
-        AND time_measurement = ?
-    SQL
-
-    Infraestructure::Query.run(sql, season_id, time_measurement)
-  end
 
   private
 
@@ -172,15 +157,14 @@ module Service
       if conditions[:season_definition_id]
         if conditions[:season_definition_id].to_s.downcase == 'null'
           clauses << "pd.season_definition_id IS NULL"
-          clauses << "p.season_id IS NULL"
         else
           clauses << "pd.season_definition_id = ?"
-          # Only add season_id filter if season_definition_id is not null
-          clauses << "p.season_id = ?" if conditions[:season_id]
         end
-      else
-        # If season_definition_id is not provided, allow season_id filter
-        clauses << "p.season_id = ?" if conditions[:season_id]
+      end
+      
+      # Optional season_id filter (now we can filter prices directly)
+      if conditions[:season_id]
+        clauses << "p.season_id = ?"
       end
       
       clauses.any? ? "WHERE #{clauses.join(' AND ')}" : ""
@@ -203,14 +187,12 @@ module Service
       if conditions[:season_definition_id]
         if conditions[:season_definition_id].to_s.downcase != 'null'
           params << conditions[:season_definition_id]
-          # Only add season_id parameter if season_definition_id is not null
-          params << conditions[:season_id] if conditions[:season_id]
         end
         # If season_definition_id is 'null', don't add any parameters for season filters
-      else
-        # If season_definition_id is not provided, allow season_id parameter
-        params << conditions[:season_id] if conditions[:season_id]
       end
+      
+      # Optional season_id filter
+      params << conditions[:season_id] if conditions[:season_id]
       
       params
     end
