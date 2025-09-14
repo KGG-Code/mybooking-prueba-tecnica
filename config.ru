@@ -5,6 +5,7 @@ require_relative 'app/errors/base_error'
 require_relative 'app/errors/validation_error'
 require_relative 'app/errors/not_found_error'
 require_relative 'app/errors/unauthorized_error'
+require_relative 'app/errors/export_error'
 
 # Setup rack session
 use Rack::Session::Cookie, :secret => ENV['COOKIE_SECRET'],
