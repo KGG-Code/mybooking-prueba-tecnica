@@ -44,11 +44,6 @@ module Controller
           use_case = UseCase::Import::ImportPricesCsvUseCase.new(import_service, logger)
           result = use_case.perform(file.path)
           
-          # Log temporal para debug
-          logger.info "Result success: #{result.success?}"
-          logger.info "Result data: #{result.data.inspect}"
-          logger.info "Result data keys: #{result.data&.keys.inspect}"
-          
           if result.success?
             content_type :json
             { 

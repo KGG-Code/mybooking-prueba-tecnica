@@ -27,17 +27,6 @@ module UseCase
       #
       def perform(csv_path)
         begin
-          # Validar que el archivo existe y es válido
-          unless File.exist?(csv_path)
-            @logger.error "ImportPricesCsvUseCase - perform - CSV file does not exist: #{csv_path}"
-            return Result.new(success?: false, message: "CSV file does not exist")
-          end
-
-          unless File.size(csv_path) > 0
-            @logger.error "ImportPricesCsvUseCase - perform - CSV file is empty: #{csv_path}"
-            return Result.new(success?: false, message: "CSV file is empty")
-          end
-
           @logger.info "ImportPricesCsvUseCase - perform - starting import from #{csv_path}"
 
           # Ejecutar la importación usando el import service
