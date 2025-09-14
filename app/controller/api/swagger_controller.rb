@@ -76,6 +76,10 @@ module Controller
               {
                 "name": "Export",
                 "description": "Operations related to data export"
+              },
+              {
+                "name": "Import",
+                "description": "Operations related to data import"
               }
             ],
             "paths": {
@@ -902,6 +906,178 @@ module Controller
                                 "description": "Error message"
                               }
                             }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/import/prices": {
+                "post": {
+                  "summary": "Import prices from CSV",
+                  "description": "Uploads a CSV file to import price data. The CSV should contain category_code, rental_location_name, rate_type_name, season_name, time_measurement, units, and optional price, included_km, extra_km_price columns.",
+                  "operationId": "importPrices",
+                  "tags": ["Import"],
+                  "requestBody": {
+                    "required": true,
+                    "content": {
+                      "multipart/form-data": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "file": {
+                              "type": "string",
+                              "format": "binary",
+                              "description": "CSV file containing price data"
+                            }
+                          },
+                          "required": ["file"]
+                        }
+                      }
+                    }
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "Import successful",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Import status",
+                                "example": "success"
+                              },
+                              "message": {
+                                "type": "string",
+                                "description": "Success message",
+                                "example": "Importación completada"
+                              }
+                            },
+                            "required": ["status", "message"]
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request - missing file",
+                      "content": {
+                        "text/plain": {
+                          "schema": {
+                            "type": "string",
+                            "description": "Error message",
+                            "example": "Archivo requerido"
+                          }
+                        }
+                      }
+                    },
+                    "422": {
+                      "description": "Validation error",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Error status",
+                                "example": "error"
+                              },
+                              "message": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "500": {
+                      "description": "Internal server error",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Error status",
+                                "example": "error"
+                              },
+                              "message": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/import/prices/info": {
+                "get": {
+                  "summary": "Get import format information",
+                  "description": "Returns information about the required CSV format for importing prices",
+                  "operationId": "getImportInfo",
+                  "tags": ["Import"],
+                  "responses": {
+                    "200": {
+                      "description": "Import format information",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Response status",
+                                "example": "success"
+                              },
+                              "csv_format": {
+                                "type": "object",
+                                "properties": {
+                                  "required_headers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "description": "Required CSV headers",
+                                    "example": ["category_code", "rental_location_name", "rate_type_name", "season_name", "time_measurement", "units"]
+                                  },
+                                  "optional_headers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "description": "Optional CSV headers",
+                                    "example": ["price", "included_km", "extra_km_price"]
+                                  },
+                                  "time_measurement_values": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "description": "Valid time measurement values",
+                                    "example": ["meses", "dias", "horas", "minutos"]
+                                  },
+                                  "description": {
+                                    "type": "string",
+                                    "description": "Format description",
+                                    "example": "CSV format requirements and valid values"
+                                  }
+                                }
+                              },
+                              "example_file_url": {
+                                "type": "string",
+                                "description": "URL to download example CSV file",
+                                "example": "/api/export/prices.csv"
+                              }
+                            },
+                            "required": ["status", "csv_format", "example_file_url"]
                           }
                         }
                       }
