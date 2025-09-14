@@ -105,23 +105,32 @@ module Service
             next
           end
 
-          # Buscar temporada
-          season = @entity_finder.find_season_by_name(normalized_data[:season_name], pd_sd_id)
-          unless season
-            warn "Season '#{normalized_data[:season_name]}' no encontrado para PriceDefinition #{pd_id}"
-            skipped_rows += 1
-            skipped_rows_details << {
-              row_data: normalized_data,
-              reason: "Season '#{normalized_data[:season_name]}' no encontrado para PriceDefinition #{pd_id}",
-              row_number: processed_rows + skipped_rows + 1
-            }
-            next
+          # Buscar temporada (manejar caso especial de "Sin temporada")
+          season = nil
+          season_id = nil
+          
+          # Si el nombre de temporada indica "sin temporada", usar season_id = nil
+          if normalized_data[:season_name].to_s.downcase.strip.match?(/^(sin temporada|no season|null|empty)$/)
+            season_id = nil
+          else
+            season = @entity_finder.find_season_by_name(normalized_data[:season_name], pd_sd_id)
+            unless season
+              warn "Season '#{normalized_data[:season_name]}' no encontrado para PriceDefinition #{pd_id}"
+              skipped_rows += 1
+              skipped_rows_details << {
+                row_data: normalized_data,
+                reason: "Season '#{normalized_data[:season_name]}' no encontrado para PriceDefinition #{pd_id}",
+                row_number: processed_rows + skipped_rows + 1
+              }
+              next
+            end
+            season_id = season.id
           end
 
           # Preparar datos para persistencia
           price_data = {
             price_definition_id: pd_id,
-            season_id: season.id,
+            season_id: season_id,
             time_measurement: tm,
             units: normalized_data[:units].to_i,
             price: @data_mapper.to_decimal_or_nil(normalized_data[:price]),
@@ -130,7 +139,7 @@ module Service
             category_code: category.code,
             rental_location_name: rental_location.name,
             rate_type_name: rate_type.name,
-            season_name: season.name,
+            season_name: season ? season.name : "Sin Temporada",
             time_measurement_text: normalized_data[:time_measurement]
           }
 

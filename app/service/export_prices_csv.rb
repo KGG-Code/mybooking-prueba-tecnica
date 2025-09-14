@@ -10,8 +10,10 @@ module Service
         4 => "minutos"
     }.freeze
 
-    def initialize(logger: $stdout)
+    def initialize(season_repository:, logger: $stdout)
+        @season_repository = season_repository
         @logger = logger
+        @season_cache = {}
     end
 
     def call(csv_path, data: nil, logger: $stdout)
@@ -23,16 +25,16 @@ module Service
         raise ArgumentError, "data parameter is required" if data.nil?
         
         # Escribimos el CSV con cabecera
-        CSV.open(csv_path, "w", write_headers: true, headers: %w[
-        category_code
-        rental_location_name
-        rate_type_name
-        season_name
-        time_measurement
-        units
-        price
-        included_km
-        extra_km_price
+        CSV.open(csv_path, "w", write_headers: true, headers: [
+        "category_code",
+        "rental_location_name", 
+        "rate_type_name",
+        "season_name",
+        "time_measurement",
+        "units",
+        "price",
+        "included_km",
+        "extra_km_price"
         ]) do |csv|
         data.each_with_index do |price_definition, index|
             # Agregar fila en blanco entre grupos (excepto el primero)
@@ -68,16 +70,12 @@ module Service
     private
 
     def get_season_name(season_id)
-        # Mapeo básico de season_id a nombre de temporada
-        # Puedes expandir esto según tus necesidades
-        case season_id
-        when 1 then "Alta"
-        when 2 then "Media"
-        when 3 then "Baja"
-        when 4 then "Alta"
-        when 5 then "Media"
-        when 0, nil then "Sin Temporada"
-        else "Temporada #{season_id}"
+        return "Sin Temporada" if season_id.nil? || season_id == 0
+        
+        # Usar cache para evitar consultas repetidas
+        @season_cache[season_id] ||= begin
+            season = @season_repository.first(id: season_id)
+            season ? season.name : "Temporada #{season_id}"
         end
     end
 

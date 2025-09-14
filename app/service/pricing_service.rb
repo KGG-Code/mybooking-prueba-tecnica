@@ -42,8 +42,11 @@ module Service
         ON crlrt.rate_type_id = rt.id
       JOIN price_definitions pd
         ON pd.id = crlrt.price_definition_id
-      JOIN prices p
-        ON p.price_definition_id = pd.id
+      LEFT JOIN seasons s
+        ON s.season_definition_id = pd.season_definition_id
+      LEFT JOIN prices p
+        ON p.price_definition_id = pd.id 
+        AND (p.season_id = s.id OR p.season_id IS NULL)
       #{where_clause}
       GROUP BY c.id, c.code, c.name, rl.name, rt.name, pd.id
       ORDER BY c.code

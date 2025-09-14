@@ -19,7 +19,8 @@ module Controller
           begin
             # Usar el use case para la exportación
             pricing_service = Service::PricingService.new
-            export_service = Service::ExportPricesCsv.new
+            season_repository = Repository::SeasonRepository.new
+            export_service = Service::ExportPricesCsv.new(season_repository: season_repository)
             validator = Validation::Validator.new
             use_case = UseCase::Export::ExportPricesCsvUseCase.new(pricing_service, export_service, validator, logger)
             result = use_case.perform(tmp_path)
@@ -51,7 +52,8 @@ module Controller
           
           Tempfile.create(['precios_info', '.csv']) do |tmp|
             pricing_service = Service::PricingService.new
-            export_service = Service::ExportPricesCsv.new
+            season_repository = Repository::SeasonRepository.new
+            export_service = Service::ExportPricesCsv.new(season_repository: season_repository)
             validator = Validation::Validator.new
             use_case = UseCase::Export::ExportPricesCsvUseCase.new(pricing_service, export_service, validator, logger)
             result = use_case.perform(tmp.path)
