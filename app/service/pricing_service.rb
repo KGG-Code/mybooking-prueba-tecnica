@@ -22,14 +22,16 @@ module Service
         c.code as category_code,
         c.name as category_name,
         pd.id as price_definition_id,
-        GROUP_CONCAT(
-          CONCAT(
-            '{"season_id":', p.season_id,
-            ',"units":', p.units,
-            ',"time_measurement":', p.time_measurement,
-            ',"price":', p.price, '}'
-          ) SEPARATOR ','
-        ) as prices_json_string
+
+        JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'season_id',        IFNULL(p.season_id,        0),
+            'units',            IFNULL(p.units,            0),
+            'time_measurement', IFNULL(p.time_measurement, 0),
+            'price',            IFNULL(p.price,            0.0)
+          )
+          ORDER BY p.season_id, p.time_measurement, p.units
+        ) AS prices_json_string
         
       FROM categories c
       JOIN category_rental_location_rate_types crlrt
@@ -57,11 +59,8 @@ module Service
       # Convert prices_json_string to prices array
       prices_json_value = category_hash['prices_json_string'] || category_hash[:prices_json_string]
       if prices_json_value && !prices_json_value.nil?
-        # Wrap the concatenated JSON objects in an array
-        json_array_string = "[#{prices_json_value}]"
-        prices_array = JSON.parse(json_array_string)
-        # Sort by units
-        prices_array = prices_array.sort_by { |price| price['units'].to_i }
+        # JSON_ARRAYAGG ya devuelve un array JSON válido
+        prices_array = JSON.parse(prices_json_value)
         
         category_hash['prices'] = prices_array
       else
