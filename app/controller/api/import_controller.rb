@@ -27,14 +27,20 @@ module Controller
                 halt 415, { error: "Formato no soportado: #{ext}. Usa .csv o .xlsx" }.to_json
               end
 
-            # Repositorios (heredan de BaseRepository)
-            price_repo   = Repository::PriceRepository.new
-            category_repo = Repository::CategoryRepository.new
-            rl_repo       = Repository::RentalLocationRepository.new
-            rt_repo       = Repository::RateTypeRepository.new
-            crlrt_repo    = Repository::CategoryRentalLocationRateTypeRepository.new
-            season_repo   = Repository::SeasonRepository.new
-
+            # Repositorios
+            price_repo        = Repository::PriceRepository.new
+            category_repo     = Repository::CategoryRepository.new
+            rl_repo           = Repository::RentalLocationRepository.new
+            rt_repo           = Repository::RateTypeRepository.new
+            crlrt_repo        = Repository::CategoryRentalLocationRateTypeRepository.new
+            season_repo       = Repository::SeasonRepository.new
+            price_def_repo    = Repository::PriceDefinitionRepository.new
+            pd_units_resolver = Service::Resolvers::AllowedUnitsFromPriceDefinitionResolver.new(
+              price_definition_repo: price_def_repo,
+              logger: logger
+            )
+            
+            # Repositorios
             # Resolvers/recursos basados en repos
             price_def_resolver = Service::Resolvers::PriceDefinitionResolver.new(
               category_repo: category_repo,
@@ -57,10 +63,11 @@ module Controller
             )
 
             importer = Service::ImportPrices.new(
-              prices_resource: prices_resource,
-              price_definition_resolver: price_def_resolver,
-              season_id_resolver: season_id_resolver,
-              time_measurement_parser: tm_parser,
+              prices_resource:              prices_resource,
+              price_definition_resolver:    price_def_resolver,
+              season_id_resolver:           season_id_resolver,
+              time_measurement_parser:      tm_parser,
+              price_definition_units_resolver: pd_units_resolver,
               logger: logger
             )
 

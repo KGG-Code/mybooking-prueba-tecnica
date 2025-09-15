@@ -4,8 +4,6 @@ module Service
     module Resolvers
       # Resuelve price_definition_id a partir de:
       #   category_code, rental_location_name, rate_type_name
-      #
-      # Sin SQL: usa repositorios para conseguir los IDs y luego la fila CRLRT.
       class PriceDefinitionResolver
         def initialize(category_repo:, rental_location_repo:, rate_type_repo:, crlrt_repo:, logger: nil)
           @categories = category_repo
