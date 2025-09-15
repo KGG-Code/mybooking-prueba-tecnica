@@ -2,7 +2,7 @@
 
 # Ejemplo de uso de los contracts de pricing con el nuevo sistema
 
-require_relative 'lib/validation/validator'
+require_relative 'app/validation/validator'
 require_relative 'app/validation/contracts/pricing_contracts'
 
 # Ejemplo 1: Validar parámetros de filtrado (como en pricing_controller)

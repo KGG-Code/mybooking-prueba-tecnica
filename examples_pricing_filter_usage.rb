@@ -2,7 +2,7 @@
 
 # Ejemplos prácticos de cómo aplicar PricingFilterContract
 
-require_relative 'lib/validation/validator'
+require_relative 'app/validation/validator'
 require_relative 'app/validation/contracts/pricing_contracts'
 
 # Ejemplo 1: En un controlador de API (como pricing_controller.rb)

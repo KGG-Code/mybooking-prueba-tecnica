@@ -2,7 +2,7 @@
 
 # Ejemplo de uso del nuevo sistema de validación con reglas separadas
 
-require_relative 'lib/validation/validator'
+require_relative 'app/validation/validator'
 
 # Contract para importación de precios CSV
 class ImportPricesContract

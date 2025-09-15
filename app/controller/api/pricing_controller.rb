@@ -1,4 +1,4 @@
-require_relative '../../../lib/validation/validator'
+require_relative '../../validation/validator'
 require_relative '../../validation/contracts/pricing_contracts'
 
 module Controller

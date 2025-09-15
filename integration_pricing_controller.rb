@@ -2,7 +2,7 @@
 
 # Ejemplo de cómo integrar PricingFilterContract en pricing_controller.rb
 
-require_relative 'lib/validation/validator'
+require_relative 'app/validation/validator'
 require_relative 'app/validation/contracts/pricing_contracts'
 
 # Versión mejorada del pricing_controller.rb con validación

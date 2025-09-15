@@ -2,8 +2,8 @@
 
 # Ejemplo de cómo usar reglas personalizadas
 
-require_relative 'lib/validation/validator'
-require_relative 'lib/validation/rules/custom_rules'
+require_relative 'app/validation/validator'
+require_relative 'app/validation/rules/custom_rules'
 
 # Registrar reglas personalizadas
 Validation::Rules::Registry.register(:no_scientific_notation, Validation::Rules::NoScientificNotation)
