@@ -28,37 +28,28 @@ module Controller
               end
 
             # Repositorios
-            price_repo        = Repository::PriceRepository.new
-            category_repo     = Repository::CategoryRepository.new
-            rl_repo           = Repository::RentalLocationRepository.new
-            rt_repo           = Repository::RateTypeRepository.new
-            crlrt_repo        = Repository::CategoryRentalLocationRateTypeRepository.new
-            season_repo       = Repository::SeasonRepository.new
-            price_def_repo    = Repository::PriceDefinitionRepository.new
-            pd_units_resolver = Service::Resolvers::AllowedUnitsFromPriceDefinitionResolver.new(
-              price_definition_repo: price_def_repo,
-              logger: logger
-            )
-            
-            # Repositorios
-            # Resolvers/recursos basados en repos
-            price_def_resolver = Service::Resolvers::PriceDefinitionResolver.new(
-              category_repo: category_repo,
-              rental_location_repo: rl_repo,
-              rate_type_repo: rt_repo,
-              crlrt_repo: crlrt_repo,
+            pd_units_resolver = Utils::Resolvers::AllowedUnitsFromPriceDefinitionResolver.new(
+              price_definition_repo: Repository::PriceDefinitionRepository.new,
               logger: logger
             )
 
-            season_id_resolver = Service::Resolvers::SeasonIdResolver.new(
-              season_repo: season_repo,
+            price_def_resolver = Utils::Resolvers::PriceDefinitionResolver.new(
+              category_repo: Repository::CategoryRepository.new,
+              rental_location_repo: Repository::RentalLocationRepository.new,
+              rate_type_repo: Repository::RateTypeRepository.new,
+              crlrt_repo: Repository::CategoryRentalLocationRateTypeRepository.new,
+              logger: logger
+            )
+
+            season_id_resolver = Utils::Resolvers::SeasonIdResolver.new(
+              season_repo: Repository::SeasonRepository.new,
               logger: logger
             )
 
             tm_parser = Service::TimeMeasurementParser.new
 
             prices_resource = Resources::PricesResource.new(
-              price_repository: price_repo,
+              price_repository: Repository::PriceRepository.new,
               logger: logger
             )
 
@@ -73,7 +64,7 @@ module Controller
 
             validator = Validation::Validator.new
 
-            use_case = UseCase::Import::ImportPricesCsvUseCase.new(
+            use_case = UseCase::Import::ImportPricesUseCase.new(
               reader: reader,
               importer: importer,
               validator: validator,
@@ -83,13 +74,27 @@ module Controller
             result = use_case.perform
 
             payload = {
+              success:  result.success?,
               message:  result.message,
               imported: result.imported,
               total:    result.total,
-              errors:   result.errors # array de {row, values, reason}
+              errors:   result.errors, # array de {row, values, reason}
+              status:   result.status
             }
 
-            status(result.success? ? 201 : 422)
+            # Determinar código de estado HTTP basado en el resultado
+            http_status = case result.status
+            when :success
+              201  # Created - importación completamente exitosa
+            when :partial_success
+              200  # OK - importación parcialmente exitosa
+            when :error
+              422  # Unprocessable Entity - no se pudo importar nada
+            else
+              500  # Internal Server Error - estado desconocido
+            end
+
+            status(http_status)
             payload.to_json
 
           rescue => e

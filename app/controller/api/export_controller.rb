@@ -47,13 +47,11 @@ module Controller
           tmp.close
 
           begin
-            # 1) Construcción de dependencias (en orden)
-            pricing_service   = Service::PricingService.new
-            season_repository = Repository::SeasonRepository.new
-            resolver          = Service::SeasonNameResolver.new(season_repository: season_repository)
-            tm_resolver       = Service::TimeMeasurementResolver.new
-            reader            = Adapters::PricingReaderFromService.new(
-                                  pricing_service,
+            # 1) Construcción de dependencias
+            resolver          = Utils::Resolvers::SeasonNameResolver.new(season_repository: Repository::SeasonRepository.new)
+            tm_resolver       = Utils::Resolvers::TimeMeasurementResolver.new
+            reader            = Adapters::PricingServiceReader.new(
+              Service::PricingService.new,
                                   conditions: export_conditions_from_params,
                                   season_name_resolver: resolver,
                                   time_measurement_resolver: tm_resolver
@@ -62,7 +60,7 @@ module Controller
             validator         = Validation::Validator.new   # <-- ¡AQUÍ se define!
 
             # 2) Use case con TODAS las deps
-            use_case = UseCase::Export::ExportPricesCsvUseCase.new(
+            use_case = UseCase::Export::ExportPricesUseCase.new(
               reader: reader,
               exporter: exporter,
               validator: validator,

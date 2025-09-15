@@ -4,7 +4,7 @@ require 'csv'
 
 module UseCase
   module Export
-    class ExportPricesCsvUseCase
+    class ExportPricesUseCase
       Result = Struct.new(:success?, :message, keyword_init: true)
 
       def initialize(reader:, exporter:, validator:, logger: nil)
@@ -18,17 +18,17 @@ module UseCase
         File.open(path, 'wb') { |file| call(io: file, input: input, options: options) }
         Result.new(success?: true)
       rescue Validation::Error => e
-        @logger&.warn("[ExportPricesCsvUseCase] validation failed: #{e.message}")
+        @logger&.warn("[ExportPricesUseCase] validation failed: #{e.message}")
         Result.new(success?: false, message: e.message)
       rescue => e
-        @logger&.error("[ExportPricesCsvUseCase] unexpected: #{e.class}: #{e.message}")
+        @logger&.error("[ExportPricesUseCase] unexpected: #{e.class}: #{e.message}")
         Result.new(success?: false, message: 'Fallo inesperado en la exportación')
       end
 
       def call(io:, input: {}, options: {})
         safe_validate!(input)
         io << "\uFEFF" # BOM para Excel
-        enum_proc = ->(&blk) { @reader.each_price(&blk) }
+        enum_proc = ->(&blk) { @reader.each(&blk) }
         options[:grouped] = true if options[:grouped].nil?
         @exporter.write(io, enum_proc, options)
       end

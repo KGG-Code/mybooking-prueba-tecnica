@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# Servicio para importar precios desde datos CSV procesados.
+#
+# Recibe un OpenStruct con datos "humanos" del CSV y devuelve [:ok, nil] o [:error, "reason"]
 module Service
   class ImportPrices
     def initialize(
@@ -21,11 +24,7 @@ module Service
     # row: OpenStruct con columnas “humanas”; devuelve [:ok, nil] o [:error, "reason"]
     def import(row)
       # 1) Resolver PD
-      price_definition_id = @pd_res.call(
-        category_code:        row.category_code,
-        rental_location_name: row.rental_location_name,
-        rate_type_name:       row.rate_type_name
-      )
+      price_definition_id = @pd_res.call(row)
       return error("price_definition_not_found") unless price_definition_id
 
       # 2) Parse TM y units
@@ -34,11 +33,19 @@ module Service
       return error("invalid_time_measurement_or_units") if tm_code.nil? || units.nil?
 
       # 3) Regla de negocio: PD habilita TM y units
-      allowed = @pd_units.units_for(price_definition_id: price_definition_id, time_measurement: tm_code)
+      # Crear objeto temporal con los datos necesarios para el resolver
+      resolver_data = OpenStruct.new(
+        price_definition_id: price_definition_id,
+        time_measurement: tm_code
+      )
+      allowed = @pd_units.call(resolver_data)
       return error("unit_not_allowed_by_price_definition") unless allowed.include?(units)
 
       # 4) Resolver season
       season_id = @season_r.call(row.season_name) # nil si "Sin Temporada" o vacío
+
+      # check if price is vaid float number
+      return error("invalid_price") unless is_f(row.price)
 
       # 5) Persistir (upsert)
       attrs = {
@@ -46,9 +53,9 @@ module Service
         season_id:           season_id,
         time_measurement:    tm_code,
         units:               units,
-        price:               to_f_or_nil(row.price),
+        price:               row.price.to_f,
         included_km:         int_or_nil(row.included_km),
-        extra_km_price:      to_f_or_nil(row.extra_km_price)
+        extra_km_price:      row.extra_km_price.to_f
       }
 
       ok = @prices.upsert(attrs)
@@ -71,11 +78,12 @@ module Service
       /\A-?\d+\z/ === s ? s.to_i : nil
     end
 
-    def to_f_or_nil(v)
-      return nil if v.nil?
+    def is_f(v)
+      return false if v.nil?
       s = v.to_s.strip
-      return nil if s.empty?
-      s.tr(',', '.').to_f
+      return false if s.empty?
+      s = s.tr(',', '.')
+      /\A-?\d+(\.\d+)?\z/ === s
     end
   end
 end
