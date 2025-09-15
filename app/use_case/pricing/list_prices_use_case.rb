@@ -1,9 +1,7 @@
-require_relative '../../constants/time_unit_constants'
-
 module UseCase
   module Pricing
     #
-    # Use case to list all prices
+    # Use case to list prices
     #
     class ListPricesUseCase
 
@@ -30,19 +28,8 @@ module UseCase
       # @return [Result]
       #
       def perform(params)
-        # Validar los datos aquí dentro del use case
-        validation_result = @validator.validate(params)
-        
-        unless validation_result.success?
-          return Result.new(
-            success?: false, 
-            message: "Parámetros inválidos", 
-            errors: validation_result.errors
-          )
-        end
 
-        # Usar los datos validados
-        validated_params = validation_result.validated
+        validated_params = process_params(params)
         data = load_data(validated_params)
         @logger.info "ListPricesUseCase - perform - loaded #{data.length} price definitions"
 
@@ -62,56 +49,7 @@ module UseCase
       # @return [Hash]
       #
       def process_params(params)
-#        rental_location_id = params[:rental_location_id] || params['rental_location_id']
-#        season_definition_id = params[:season_definition_id] || params['season_definition_id']
-#        rate_type_id = params[:rate_type_id] || params['rate_type_id']
-#        season_id = params[:season_id] || params['season_id']
-#        unit = params[:unit] || params['unit']
-#        page = params[:page] || params['page']
-#        per_page = params[:per_page] || params['per_page']
-#        
-#        @validator.set_schema({ 
-#          rental_location_id: [:optional, :int],
-#          season_definition_id: [:optional, :nullable, :int],
-#          rate_type_id: [:optional, :int],
-#          season_id: [:optional, :nullable, :int],
-#          unit: [:optional, [:enum, *TimeUnitConstants::VALID_TIME_UNITS]],
-#          page: [:optional, :int],
-#          per_page: [:optional, :int]
-#        })
-          #@validator.validate!
-        
-#        return { 
-#          valid: true, 
-#          authorized: true, 
-#          rental_location_id: @validator.data[:rental_location_id],
-#          season_definition_id: @validator.data[:season_definition_id],
-#          rate_type_id: @validator.data[:rate_type_id],
-#          season_id: @validator.data[:season_id],
-#          unit: @validator.data[:unit],
-#          page: @validator.data[:page],
-#          per_page: @validator.data[:per_page]
-#        }
-      end
-
-      #
-      # Build conditions for the query
-      #
-      # @param [Hash] processed_params - Processed parameters
-      #
-      # @return [Hash] Conditions hash
-      #
-      def build_conditions(processed_params)
-        processed_params
-#        conditions = {}
-#        conditions[:rental_location_id] = processed_params[:rental_location_id] unless processed_params[:rental_location_id].nil?
-#        conditions[:season_definition_id] = processed_params[:season_definition_id] unless processed_params[:season_definition_id].nil?
-#        conditions[:rate_type_id] = processed_params[:rate_type_id] unless processed_params[:rate_type_id].nil?
-#        conditions[:season_id] = processed_params[:season_id] unless processed_params[:season_id].nil?
-#        conditions[:unit] = processed_params[:unit] unless processed_params[:unit].nil?
-#        conditions[:page] = processed_params[:page] unless processed_params[:page].nil?
-#        conditions[:per_page] = processed_params[:per_page] unless processed_params[:per_page].nil?
-#        conditions
+        @validator.validate!(params)
       end
 
     end

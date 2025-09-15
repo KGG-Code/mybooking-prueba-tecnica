@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../errors/validation_error'
 require_relative 'rules/registry'
 require_relative 'rules/base_rule'
 require_relative 'rules/required'
@@ -15,13 +16,8 @@ require_relative 'rules/optional_rules'
 require_relative 'rules/custom_rules'
 
 module Validation
-  class Error < StandardError
-    attr_reader :errors
-    def initialize(errors)
-      super("Validation failed")
-      @errors = errors
-    end
-  end
+  # Usar Errors::ValidationError en lugar de Validation::Error
+  # para que el middleware lo reconozca correctamente
 
   # Helpers simples
   module Helpers
@@ -115,7 +111,7 @@ module Validation
       # Si no se pasan datos, usamos los que ya estaban en @attrs
       
       run
-      raise Error, errors unless errors.values.all?(&:empty?)
+      raise Errors::ValidationError.new("Validation failed", details: errors) unless errors.values.all?(&:empty?)
       validated
     end
 
