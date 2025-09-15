@@ -74,13 +74,27 @@ module Controller
             result = use_case.perform
 
             payload = {
+              success:  result.success?,
               message:  result.message,
               imported: result.imported,
               total:    result.total,
-              errors:   result.errors # array de {row, values, reason}
+              errors:   result.errors, # array de {row, values, reason}
+              status:   result.status
             }
 
-            status(result.success? ? 201 : 422)
+            # Determinar código de estado HTTP basado en el resultado
+            http_status = case result.status
+            when :success
+              201  # Created - importación completamente exitosa
+            when :partial_success
+              200  # OK - importación parcialmente exitosa
+            when :error
+              422  # Unprocessable Entity - no se pudo importar nada
+            else
+              500  # Internal Server Error - estado desconocido
+            end
+
+            status(http_status)
             payload.to_json
 
           rescue => e

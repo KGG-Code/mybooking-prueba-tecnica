@@ -3,7 +3,7 @@
 module UseCase
   module Import
     class ImportPricesUseCase
-      Result = Struct.new(:success?, :message, :imported, :total, :errors, keyword_init: true)
+      Result = Struct.new(:success?, :message, :imported, :total, :errors, :status, keyword_init: true)
 
       def initialize(reader:, importer:, validator:, logger: nil)
         @reader    = reader      # each { |row| ... } con row._row_number
@@ -44,16 +44,38 @@ module UseCase
           end
         end
 
-        msg = errors.empty? ? "Importadas #{imported}/#{total} filas" :
-                              "Importadas #{imported}/#{total} filas; #{errors.size} con errores"
+        # Determinar el estado de la importación
+        if imported == 0
+          # Error total: no se importó nada
+          status = :error
+          success = false
+          msg = "No se pudo importar ninguna fila. #{errors.size} errores encontrados."
+        elsif imported == total
+          # Éxito total: todo se importó correctamente
+          status = :success
+          success = true
+          msg = "Importación completada exitosamente. #{imported}/#{total} filas importadas."
+        else
+          # Éxito parcial: se importó algo pero no todo
+          status = :partial_success
+          success = true
+          msg = "Importación parcialmente exitosa. #{imported}/#{total} filas importadas, #{errors.size} con errores."
+        end
 
-        Result.new(success?: errors.empty?, message: msg, imported: imported, total: total, errors: errors)
+        Result.new(
+          success?: success, 
+          message: msg, 
+          imported: imported, 
+          total: total, 
+          errors: errors,
+          status: status
+        )
       rescue Validation::Error => e
         @logger&.warn("[ImportPricesUseCase] validation failed: #{e.message}")
-        Result.new(success?: false, message: e.message, imported: 0, total: 0, errors: [])
+        Result.new(success?: false, message: e.message, imported: 0, total: 0, errors: [], status: :error)
       rescue => e
         @logger&.error("[ImportPricesUseCase] unexpected: #{e.class}: #{e.message}")
-        Result.new(success?: false, message: 'Fallo inesperado en la importación', imported: 0, total: 0, errors: [])
+        Result.new(success?: false, message: 'Fallo inesperado en la importación', imported: 0, total: 0, errors: [], status: :error)
       end
 
       private
