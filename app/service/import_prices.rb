@@ -3,6 +3,9 @@
 # Servicio para importar precios desde datos CSV procesados.
 #
 # Recibe un OpenStruct con datos "humanos" del CSV y devuelve [:ok, nil] o [:error, "reason"]
+
+# TODO: mejoar el error handling, mas especiicaos, por ejemplo si rental_location no es valido, el error es que no encuentra price_definition
+
 module Service
   class ImportPrices
     def initialize(
