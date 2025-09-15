@@ -7,7 +7,7 @@ module Service
     # Firma flexible:
     # - write(io, enum_proc)
     # - write(io, enum_proc, grouped: true)
-    # - write(io, reader)                    # donde reader responde a #each_price
+    # - write(io, reader)                    # donde reader responde a #each
     # - write(io, reader, grouped: true)
     def write(io, source, *rest)
       options  = rest.last.is_a?(Hash) ? rest.last : {}
@@ -16,10 +16,10 @@ module Service
       enum_proc =
         if source.respond_to?(:call) # Proc/lambda
           source
-        elsif source.respond_to?(:each_price) # Reader
-          ->(&blk) { source.each_price(&blk) }
-        else
-          raise ArgumentError, "ExportPricesCsv#write expects a Proc or a reader responding to #each_price"
+      elsif source.respond_to?(:each) # Reader
+        ->(&blk) { source.each(&blk) }
+      else
+        raise ArgumentError, "ExportPricesCsv#write expects a Proc or a reader responding to #each"
         end
 
       csv = CSV.new(io, col_sep: ',', row_sep: :auto, force_quotes: true)

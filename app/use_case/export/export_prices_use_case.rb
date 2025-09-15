@@ -28,7 +28,7 @@ module UseCase
       def call(io:, input: {}, options: {})
         safe_validate!(input)
         io << "\uFEFF" # BOM para Excel
-        enum_proc = ->(&blk) { @reader.each_price(&blk) }
+        enum_proc = ->(&blk) { @reader.each(&blk) }
         options[:grouped] = true if options[:grouped].nil?
         @exporter.write(io, enum_proc, options)
       end

@@ -2,24 +2,22 @@
 
 module UseCase
   module Import
-    class ImportPricesCsvUseCase
+    class ImportPriceUseCase
       Result = Struct.new(:success?, :message, :imported, :total, :errors, keyword_init: true)
 
       def initialize(reader:, importer:, validator:, logger: nil)
-        @reader    = reader      # each_row { |row| ... } con row._row_number
+        @reader    = reader      # each { |row| ... } con row._row_number
         @importer  = importer    # Service::ImportPrices
         @validator = validator
         @logger    = logger
       end
 
       def perform
-        safe_validate!
-
         imported = 0
         total    = 0
         errors   = []
 
-        @reader.each_row do |row|
+        @reader.each do |row|
           total += 1
           status, reason = @importer.import(row) # [:ok, nil] o [:error, "reason"]
           
@@ -49,20 +47,14 @@ module UseCase
 
         Result.new(success?: errors.empty?, message: msg, imported: imported, total: total, errors: errors)
       rescue Validation::Error => e
-        @logger&.warn("[ImportPricesUseCase] validation failed: #{e.message}")
+        @logger&.warn("[ImportPriceUseCase] validation failed: #{e.message}")
         Result.new(success?: false, message: e.message, imported: 0, total: 0, errors: [])
       rescue => e
-        @logger&.error("[ImportPricesUseCase] unexpected: #{e.class}: #{e.message}")
+        @logger&.error("[ImportPriceUseCase] unexpected: #{e.class}: #{e.message}")
         Result.new(success?: false, message: 'Fallo inesperado en la importación', imported: 0, total: 0, errors: [])
       end
 
       private
-
-      def safe_validate!
-        return unless @validator.respond_to?(:validate!)
-        arity = @validator.method(:validate!).arity
-        arity == 0 ? @validator.validate! : @validator.validate!({})
-      end
 
       def safe_str(row, attr)
         row.respond_to?(attr) ? row.public_send(attr) : nil

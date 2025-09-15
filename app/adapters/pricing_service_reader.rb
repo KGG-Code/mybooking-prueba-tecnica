@@ -11,7 +11,7 @@ module Adapters
   #   rental_location_name, rate_type_name, category_code, category_name,
   #   price_definition_id, season_id, season_name, time_measurement, units,
   #   price, included_km, extra_km_price
-  class PricingReaderFromService
+  class PricingServiceReader
     def initialize(pricing_service, conditions: {}, season_name_resolver: nil, time_measurement_resolver: nil)
       @svc          = pricing_service
       @conditions   = conditions || {}
@@ -19,7 +19,7 @@ module Adapters
       @tm_resolver  = time_measurement_resolver
     end
 
-    def each_price
+    def each
       rows = @svc.get_price_definitions(@conditions)
 
       rows.each do |row|

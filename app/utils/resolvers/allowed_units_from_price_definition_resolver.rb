@@ -27,7 +27,10 @@ module Utils
     # - no existe la PD,
     # - el time_measurement no está habilitado en la PD (flag = 0),
     # - o la lista está vacía.
-    def units_for(price_definition_id:, time_measurement:)
+    def call(row)
+      price_definition_id = row.price_definition_id
+      time_measurement = row.time_measurement
+      
       key = [price_definition_id, time_measurement.to_i]
       return @cache[key] if @cache.key?(key)
 

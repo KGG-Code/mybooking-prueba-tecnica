@@ -13,7 +13,11 @@ module Utils
       @logger     = logger
     end
 
-    def call(category_code:, rental_location_name:, rate_type_name:)
+    def call(row)
+      category_code = row.category_code
+      rental_location_name = row.rental_location_name
+      rate_type_name = row.rate_type_name
+      
       return nil if blank?(category_code) || blank?(rental_location_name) || blank?(rate_type_name)
 
       category = @categories.first(code: category_code)
