@@ -10,7 +10,6 @@ module UseCase
       def initialize(reader:, exporter:, validator:, logger: nil)
         @reader    = reader
         @exporter  = exporter
-        @validator = validator
         @logger    = logger
       end
 
@@ -26,19 +25,11 @@ module UseCase
       end
 
       def call(io:, input: {}, options: {})
-        safe_validate!(input)
+        @validator.validate!(input)
         io << "\uFEFF" # BOM para Excel
         enum_proc = ->(&blk) { @reader.each(&blk) }
         options[:grouped] = true if options[:grouped].nil?
         @exporter.write(io, enum_proc, options)
-      end
-
-      private
-
-      def safe_validate!(input)
-        return unless @validator.respond_to?(:validate!)
-        arity = @validator.method(:validate!).arity
-        arity == 0 ? @validator.validate! : @validator.validate!(input)
       end
     end
   end

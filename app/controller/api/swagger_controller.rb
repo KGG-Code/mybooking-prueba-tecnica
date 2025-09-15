@@ -206,23 +206,24 @@ module Controller
                   }
                 }
               },
-              "/api/rate-types": {
+              "/api/open-rate-types": {
                 "get": {
-                  "summary": "List rate types",
-                  "description": "Returns a list of rate types with optional rental location filter",
-                  "operationId": "listRateTypes",
+                  "summary": "List rate types (open endpoint)",
+                  "description": "Returns a list of rate types with optional rental location filter. This is an open endpoint that doesn't require authentication.",
+                  "operationId": "listOpenRateTypes",
                   "tags": ["Rate Types"],
                   "parameters": [
                     {
                       "name": "rental_location_id",
                       "in": "query",
-                      "description": "Filter rate types by rental location ID",
+                      "description": "Filter rate types by rental location ID (optional)",
                       "required": false,
                       "schema": {
                         "type": "integer",
                         "format": "int64",
                         "minimum": 1
-                      }
+                      },
+                      "example": 1
                     }
                   ],
                   "responses": {
@@ -239,8 +240,8 @@ module Controller
                         }
                       }
                     },
-                    "401": {
-                      "description": "Unauthorized",
+                    "400": {
+                      "description": "Bad request - invalid parameters",
                       "content": {
                         "application/json": {
                           "schema": {
@@ -255,16 +256,16 @@ module Controller
                         }
                       }
                     },
-                    "400": {
-                      "description": "Bad request",
+                    "422": {
+                      "description": "Validation error",
                       "content": {
                         "application/json": {
                           "schema": {
                             "type": "object",
                             "properties": {
-                              "error": {
-                                "type": "string",
-                                "description": "Error message"
+                              "errors": {
+                                "type": "object",
+                                "description": "Validation errors by field"
                               }
                             }
                           }
@@ -274,23 +275,24 @@ module Controller
                   }
                 }
               },
-              "/api/rate-types-by-rental-location": {
+              "/api/rate-types": {
                 "get": {
-                  "summary": "List rate types by rental location",
-                  "description": "Returns a list of rate types filtered by rental location ID (required parameter)",
-                  "operationId": "listRateTypesByRentalLocation",
+                  "summary": "List rate types (authenticated endpoint)",
+                  "description": "Returns a list of rate types filtered by rental location ID. This endpoint requires authentication and rental_location_id is mandatory.",
+                  "operationId": "listRateTypes",
                   "tags": ["Rate Types"],
                   "parameters": [
                     {
                       "name": "rental_location_id",
                       "in": "query",
-                      "description": "Rental location ID to filter rate types",
+                      "description": "Rental location ID to filter rate types (required)",
                       "required": true,
                       "schema": {
                         "type": "integer",
                         "format": "int64",
                         "minimum": 1
-                      }
+                      },
+                      "example": 1
                     }
                   ],
                   "responses": {
@@ -324,7 +326,7 @@ module Controller
                       }
                     },
                     "400": {
-                      "description": "Bad request - rental_location_id is required or invalid",
+                      "description": "Bad request - rental_location_id is required",
                       "content": {
                         "application/json": {
                           "schema": {
@@ -333,6 +335,22 @@ module Controller
                               "error": {
                                 "type": "string",
                                 "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "422": {
+                      "description": "Validation error",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "errors": {
+                                "type": "object",
+                                "description": "Validation errors by field"
                               }
                             }
                           }

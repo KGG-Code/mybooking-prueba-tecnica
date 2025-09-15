@@ -21,7 +21,7 @@ class PricingContract
 end
 
 # Contract específico para importación de precios CSV
-class ImportPricesCsvContract
+class ImportPricesContract
   attr_reader :attributes, :rules
 
   def initialize(attributes)
@@ -37,6 +37,16 @@ class ImportPricesCsvContract
       included_km: [:nullable, :int],
       extra_km_price: [:nullable, :numeric]
     }
+  end
+end
+
+# Contract específico para exportacion de precios CSV
+class ExportPricesContract
+  attr_reader :attributes, :rules
+
+  def initialize(attributes)
+    @attributes = attributes
+    @rules = {}
   end
 end
 

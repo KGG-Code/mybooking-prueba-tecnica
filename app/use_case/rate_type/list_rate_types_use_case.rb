@@ -1,7 +1,7 @@
 module UseCase
   module RateType
     #
-    # Use case to list all rate types with optional rental location filter
+    # Use case to list rate types filtered by rental location
     #
     class ListRateTypesUseCase
 
@@ -11,40 +11,28 @@ module UseCase
       # Initialize the use case
       #
       # @param rate_type_repository [Repository::RateTypeRepository] The repository
+      # @param validator [Object] Must respond to set_schema, validate!, data (duck typing)
       # @param logger [Logger] The logger
       #
-      def initialize(rate_type_repository, logger)
+      def initialize(rate_type_repository, validator, logger)
         @rate_type_repository = rate_type_repository
+        @validator = validator
         @logger = logger
       end
 
       #
       # Perform the use case
       #
-      # @param [Hash] params - Parameters (rental_location_id is optional)
+      # @param [Hash] params - Parameters including rental_location_id
       #
       # @return [Result]
       #
       def perform(params)
         processed_params = process_params(params)
-        
-        unless processed_params[:valid]
-          return Result.new(success?: false, authorized?: true, message: processed_params[:message])
-        end
-
-        unless processed_params[:authorized]
-          return Result.new(success?: true, authorized?: false, message: 'Not authorized')
-        end
-
         conditions = build_conditions(processed_params)
         data = load_data(conditions)
         
-        log_message = if processed_params[:rental_location_id]
-                        "loaded #{data.length} rate types for rental location #{processed_params[:rental_location_id]}"
-                      else
-                        "loaded #{data.length} rate types (all locations)"
-                      end
-        @logger.info "ListRateTypesUseCase - perform - #{log_message}"
+        @logger.info "ListRateTypesByRentalLocationUseCase - perform - loaded #{data.length} rate types for rental location #{processed_params[:rental_location_id]}"
 
         Result.new(success?: true, authorized?: true, data: data)
       end
@@ -59,25 +47,14 @@ module UseCase
         )
 
       end
-      
+
       #
       # Process the parameters
       #
       # @return [Hash]
       #
       def process_params(params)
-        rental_location_id = params[:rental_location_id] || params['rental_location_id']
-        
-        if rental_location_id
-          validator = Validation::BaseValidator.new(params, { rental_location_id: [:required, :int] })
-          validator.validate!
-          rental_location_id = validator.data[:rental_location_id]
-        end
-
-        return { valid: true, authorized: true, rental_location_id: rental_location_id }
-        
-      rescue Errors::ValidationError => error
-        return { valid: false, authorized: true, message: error.errors }
+        @validator.validate!(params)
       end
 
       #
@@ -89,16 +66,12 @@ module UseCase
       #
       def build_conditions(processed_params)
         rental_location_id = processed_params[:rental_location_id]
-        
-        if rental_location_id
-          return { 
-            category_rental_location_rate_types: { 
-              rental_location_id: rental_location_id 
-            } 
-          }
-        end
-        
-        return {}
+        return {} unless rental_location_id
+        { 
+          category_rental_location_rate_types: { 
+            rental_location_id: rental_location_id 
+          } 
+        }
       end
 
     end

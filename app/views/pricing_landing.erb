@@ -471,7 +471,7 @@
       function loadRateTypes(rentalLocationId) {
         showLoading();
         $.ajax({
-          url: `/api/rental-locations/${rentalLocationId}/rate-types`,
+          url: `/api/rate-types?rental_location_id=${rentalLocationId}`,
           method: 'GET',
           success: function(data) {
             const select = $('#rate_type_id');

@@ -52,13 +52,13 @@ module Controller
             resolver          = Utils::Resolvers::SeasonNameResolver.new(season_repository: Repository::SeasonRepository.new)
             tm_resolver       = Utils::Resolvers::TimeMeasurementResolver.new
             reader            = Adapters::PricingServiceReader.new(
-              Service::PricingService.new,
+                                  Service::PricingService.new,
                                   conditions: export_conditions_from_params,
                                   season_name_resolver: resolver,
                                   time_measurement_resolver: tm_resolver
                                 )
             exporter          = Service::ExportPricesCsv.new
-            validator         = Validation::Validator.new(PricingContract.new({}))
+            validator         = Validation::Validator.new(ExportPricesContract.new({}))
 
             # 2) Use case con TODAS las deps
             use_case = UseCase::Export::ExportPricesUseCase.new(
