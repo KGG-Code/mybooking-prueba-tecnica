@@ -5,24 +5,29 @@ require 'ostruct'
 
 module Adapters
   class PricingCsvReader
+    # Cabeceras: category_code, rental_location_name, rate_type_name, season_name,
+    # time_measurement, units, price, included_km, extra_km_price
     def initialize(file)
       @file = file
     end
 
     def each_row
       csv = CSV.new(@file, headers: true)
+      row_no = 2 # asumiendo fila 1 = cabecera
       csv.each do |r|
         yield OpenStruct.new(
+          _row_number:          row_no,
           category_code:        str_or_nil(r['category_code']),
           rental_location_name: str_or_nil(r['rental_location_name']),
           rate_type_name:       str_or_nil(r['rate_type_name']),
           season_name:          str_or_nil(r['season_name']),
-          time_measurement:     r['time_measurement'], # puede ser "2" o "días"
+          time_measurement:     r['time_measurement'],
           units:                to_i_or_nil(r['units']),
           price:                to_f_or_nil(r['price']),
           included_km:          to_i_or_nil(r['included_km']),
           extra_km_price:       to_f_or_nil(r['extra_km_price'])
         )
+        row_no += 1
       end
     end
 

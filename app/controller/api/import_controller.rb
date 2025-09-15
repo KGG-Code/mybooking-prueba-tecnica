@@ -82,12 +82,15 @@ module Controller
 
             result = use_case.perform
 
-            if result.success?
-              status 201
-              { message: result.message || 'Importación completada' }.to_json
-            else
-              halt 422, { error: result.message }.to_json
-            end
+            payload = {
+              message:  result.message,
+              imported: result.imported,
+              total:    result.total,
+              errors:   result.errors # array de {row, values, reason}
+            }
+
+            status(result.success? ? 201 : 422)
+            payload.to_json
 
           rescue => e
             logger&.error "[ImportController] #{e.class}: #{e.message}"

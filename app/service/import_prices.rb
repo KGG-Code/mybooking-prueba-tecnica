@@ -7,7 +7,7 @@ module Service
       price_definition_resolver:,
       season_id_resolver:,
       time_measurement_parser:,
-      price_definition_units_resolver:,
+      price_definition_units_resolver:,  # AllowedUnitsFromPriceDefinitionResolver
       logger: nil
     )
       @prices    = prices_resource
@@ -18,40 +18,32 @@ module Service
       @logger    = logger
     end
 
-    # row: OpenStruct con columnas "humanas" desde CSV/XLSX
+    # row: OpenStruct con columnas “humanas”; devuelve [:ok, nil] o [:error, "reason"]
     def import(row)
+      # 1) Resolver PD
       price_definition_id = @pd_res.call(
         category_code:        row.category_code,
         rental_location_name: row.rental_location_name,
         rate_type_name:       row.rate_type_name
       )
+      return error("price_definition_not_found") unless price_definition_id
 
-      unless price_definition_id
-        @logger&.warn "[ImportPrices] PD no encontrada para [#{row.category_code}/#{row.rental_location_name}/#{row.rate_type_name}]"
-        return false
-      end
-
+      # 2) Parse TM y units
       tm_code = @tm_parse.call(row.time_measurement)
       units   = int_or_nil(row.units)
+      return error("invalid_time_measurement_or_units") if tm_code.nil? || units.nil?
 
-      if tm_code.nil? || units.nil?
-        @logger&.warn "[ImportPrices] fila sin time_measurement/units válidos; descartada (pd=#{price_definition_id})"
-        return false
-      end
-
-      # === REGLA DE NEGOCIO (basada en price_definitions.*) ===
+      # 3) Regla de negocio: PD habilita TM y units
       allowed = @pd_units.units_for(price_definition_id: price_definition_id, time_measurement: tm_code)
-      unless allowed.include?(units)
-        @logger&.info "[ImportPrices] units=#{units} (tm=#{tm_code}) NO permitidos por PD=#{price_definition_id}; fila ignorada"
-        return false
-      end
-      # ========================================================
+      return error("unit_not_allowed_by_price_definition") unless allowed.include?(units)
 
-      season_id = @season_r.call(row.season_name)
+      # 4) Resolver season
+      season_id = @season_r.call(row.season_name) # nil si "Sin Temporada" o vacío
 
+      # 5) Persistir (upsert)
       attrs = {
         price_definition_id: price_definition_id,
-        season_id:           season_id,            # nil si "Sin Temporada"
+        season_id:           season_id,
         time_measurement:    tm_code,
         units:               units,
         price:               to_f_or_nil(row.price),
@@ -60,11 +52,17 @@ module Service
       }
 
       ok = @prices.upsert(attrs)
-      @logger&.warn("[ImportPrices] fallo upsert #{attrs.inspect}") unless ok
-      ok
+      return error("persistence_failed") unless ok
+
+      [:ok, nil]
+    rescue => e
+      @logger&.error("[ImportPrices] #{e.class}: #{e.message}")
+      error("unexpected_error")
     end
 
     private
+
+    def error(code) = [:error, code]
 
     def int_or_nil(v)
       return nil if v.nil?
