@@ -1,11 +1,15 @@
+require_relative '../../validation/contracts/season_definition_contracts'
+
 module Controller
   module Api
     module SeasonDefinitionController
       def self.registered(app)
+
         # REST API end-point to list all season definitions
-        app.get '/api/season-definitions' do
+        app.get '/api/open-season-definitions' do
           use_case = UseCase::SeasonDefinition::ListSeasonDefinitionsUseCase.new(
             Repository::SeasonDefinitionRepository.new,
+            Validation::Validator.new(SeasonDefinitionFilterOpenParamsContract.new({})),
             logger
           )
 
@@ -20,10 +24,10 @@ module Controller
         end
 
         # REST API end-point to list season definitions filtered by rate type and rental location
-        app.get '/api/season-definitions-by-rate-type' do
-          use_case = UseCase::SeasonDefinition::ListSeasonDefinitionsByRateTypeUseCase.new(
+        app.get '/api/season-definitions' do
+          use_case = UseCase::SeasonDefinition::ListSeasonDefinitionsUseCase.new(
             Repository::SeasonDefinitionRepository.new,
-            Validation::Validator.new,
+            Validation::Validator.new(SeasonDefinitionFilterParamsContract.new({})),
             logger
           )
 

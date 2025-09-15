@@ -292,12 +292,40 @@ module Controller
                   }
                 }
               },
-              "/api/season-definitions": {
+              "/api/open-season-definitions": {
                 "get": {
-                  "summary": "List all season definitions",
-                  "description": "Returns a list of all season definitions ordered by name",
-                  "operationId": "listSeasonDefinitions",
+                  "summary": "List season definitions (open endpoint)",
+                  "description": "Returns a list of season definitions with optional rate type and rental location filters. This is an open endpoint that doesn't require authentication.",
+                  "operationId": "listOpenSeasonDefinitions",
                   "tags": ["Season Definitions"],
+                  "parameters": [
+                    {
+                      "name": "rate_type_id",
+                      "in": "query",
+                      "description": "Filter season definitions by rate type ID (optional)",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1,
+                        "nullable": true
+                      },
+                      "example": 1
+                    },
+                    {
+                      "name": "rental_location_id",
+                      "in": "query",
+                      "description": "Filter season definitions by rental location ID (optional)",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1,
+                        "nullable": true
+                      },
+                      "example": 1
+                    }
+                  ],
                   "responses": {
                     "200": {
                       "description": "successful operation",
@@ -312,8 +340,8 @@ module Controller
                         }
                       }
                     },
-                    "401": {
-                      "description": "Unauthorized",
+                    "400": {
+                      "description": "Bad request - invalid parameters",
                       "content": {
                         "application/json": {
                           "schema": {
@@ -328,16 +356,16 @@ module Controller
                         }
                       }
                     },
-                    "400": {
-                      "description": "Bad request",
+                    "422": {
+                      "description": "Validation error",
                       "content": {
                         "application/json": {
                           "schema": {
                             "type": "object",
                             "properties": {
-                              "error": {
-                                "type": "string",
-                                "description": "Error message"
+                              "errors": {
+                                "type": "object",
+                                "description": "Validation errors by field"
                               }
                             }
                           }
@@ -347,34 +375,36 @@ module Controller
                   }
                 }
               },
-              "/api/season-definitions-by-rate-type": {
+              "/api/season-definitions": {
                 "get": {
-                  "summary": "List season definitions by rate type and rental location",
-                  "description": "Returns season definitions filtered by rate type and rental location based on price definitions",
-                  "operationId": "listSeasonDefinitionsByRateType",
+                  "summary": "List season definitions (authenticated endpoint)",
+                  "description": "Returns a list of season definitions filtered by rate type and rental location. This endpoint requires authentication and both rate_type_id and rental_location_id are mandatory.",
+                  "operationId": "listSeasonDefinitions",
                   "tags": ["Season Definitions"],
                   "parameters": [
                     {
                       "name": "rate_type_id",
                       "in": "query",
-                      "description": "Rate type ID to filter season definitions",
+                      "description": "Rate type ID to filter season definitions (required)",
                       "required": true,
                       "schema": {
                         "type": "integer",
                         "format": "int64",
                         "minimum": 1
-                      }
+                      },
+                      "example": 1
                     },
                     {
                       "name": "rental_location_id",
                       "in": "query",
-                      "description": "Rental location ID to filter season definitions",
+                      "description": "Rental location ID to filter season definitions (required)",
                       "required": true,
                       "schema": {
                         "type": "integer",
                         "format": "int64",
                         "minimum": 1
-                      }
+                      },
+                      "example": 1
                     }
                   ],
                   "responses": {
@@ -417,6 +447,22 @@ module Controller
                               "error": {
                                 "type": "string",
                                 "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "422": {
+                      "description": "Validation error",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "errors": {
+                                "type": "object",
+                                "description": "Validation errors by field"
                               }
                             }
                           }
