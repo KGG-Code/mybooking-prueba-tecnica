@@ -1,195 +1,367 @@
+# frozen_string_literal: true
+
+require_relative 'rules/registry'
+require_relative 'rules/base_rule'
+require_relative 'rules/required'
+require_relative 'rules/string'
+require_relative 'rules/integer'
+require_relative 'rules/numeric'
+require_relative 'rules/email'
+require_relative 'rules/min'
+require_relative 'rules/max'
+require_relative 'rules/in'
+require_relative 'rules/regex'
+require_relative 'rules/optional_rules'
+require_relative 'rules/custom_rules'
+
 module Validation
+  class Error < StandardError
+    attr_reader :errors
+    def initialize(errors)
+      super("Validation failed")
+      @errors = errors
+    end
+  end
+
+  # Helpers simples
+  module Helpers
+    module_function
+
+    def symbolize_keys(h)
+      h.each_with_object({}) { |(k,v),acc| acc[k.to_sym] = v }
+    end
+
+    def present?(v)
+      return false if v.nil?
+      return !v.empty? if v.respond_to?(:empty?)
+      true
+    end
+
+    def to_bool(v)
+      case v
+      when true, "true", "1", 1, "on", "yes" then true
+      when false, "false", "0", 0, "off", "no", nil, "" then false
+      else :invalid
+      end
+    end
+
+    EMAIL_RE = /\A[^@\s]+@[^@\s]+\z/
+  end
+
+  # Interfaz del "contract" esperado por el Validator:
+  # - contract.attributes -> Hash con params
+  # - contract.rules      -> Hash campo => [reglas]
   #
-  # Custom validator class
-  # Must implement: set_schema(schema), validate!(params), data
+  # Las reglas pueden ser:
+  #   :required, :nullable, :bail, :sometimes, :string, :integer, :numeric, :boolean, :email, :array
+  #   [:min, N], [:max, N], [:between, a, b], [:size, N], [:in, [...]], [:regex, /.../]
+  #   [:each, [...subrules...]]   # para arrays
+  #   Proc                        # regla personalizada -> ->(value, all_attrs) { true/false }
   #
   class Validator
-    attr_reader :data, :errors
+    include Helpers
 
-    def initialize
-      @data = {}
-      @errors = {}
-      @schema = {}
-    end
+    Result = Struct.new(:success?, :validated, :errors, keyword_init: true)
 
-    def set_schema(schema)
-      @schema = schema
-      self
-    end
+    attr_reader :validated, :errors
 
-    def validate!(params)
-      @raw = (params || {}).transform_keys(&:to_sym)
-      @schema.each do |field, rules|
-        rules = Array(rules) # por si alguien pasa un solo símbolo
-        value = @raw[field]
-
-        # Ejecutamos todas las reglas para el campo
-        rules.each do |rule|
-          case rule
-          when :required then check_required(field, value)
-          when :nullable then check_nullable(field, value)
-          when :int      then check_type_if_not_null(field, value, Integer)
-          when :float    then check_type_if_not_null(field, value, Float)
-          when :string   then check_type_if_not_null(field, value, String)
-          when :boolean  then check_boolean_if_not_null(field, value)
-          when Array then check_enum_if_not_null(field, value, rule[1..-1]) if rule.first == :enum
-          when :optional then next
-          else
-            raise ArgumentError, "Unknown rule: #{rule}"
-          end
-        end
-
-        # Si no hay errores para este campo y el valor no está vacío, normalizamos y guardamos
-        unless @errors[field] || value.nil? || value == ""
-          @data[field] = normalize_value(value, rules)
-        end
+    def initialize(contract_or_rules)
+      if contract_or_rules.is_a?(Hash) && contract_or_rules.key?(:rules)
+        # Es un contract con reglas
+        @rules = normalize_rules(contract_or_rules[:rules] || {})
+        @attrs = {}
+      else
+        # Es un contract normal
+        @attrs = Helpers.symbolize_keys(contract_or_rules.attributes || {})
+        @rules = normalize_rules(contract_or_rules.rules || {})
       end
+      
+      @errors = Hash.new { |h,k| h[k] = [] }
+      @validated = {}
+      
+      # Debug básico
+      STDERR.puts "🔍 VALIDATOR: #{@attrs.keys.join(', ')} (#{@attrs.size} fields) | #{@rules.keys.join(', ')} (#{@rules.size} rules)"
 
-      raise Errors::ValidationError.new(@errors) unless @errors.empty?
-      self
+      # Cargar reglas por defecto
+      Rules::Registry.load_rules
+    end
+
+    # No lanza excepción; devuelve Result
+    def validate(data = nil)
+      if data
+        # Si se pasan datos, los usamos
+        @attrs = Helpers.symbolize_keys(data)
+        @errors = Hash.new { |h,k| h[k] = [] }
+        @validated = {}
+        
+        STDERR.puts "🔍 VALIDATOR VALIDATING: #{@attrs.keys.join(', ')} (#{@attrs.size} fields)"
+      end
+      # Si no se pasan datos, usamos los que ya estaban en @attrs
+      
+      run
+      Result.new(success?: errors.values.all?(&:empty?), validated: validated, errors: errors)
+    end
+
+    # Lanza Validation::Error si hay errores (estilo Laravel "fails()")
+    def validate!(data = nil)
+      if data
+        # Si se pasan datos, los usamos
+        @attrs = Helpers.symbolize_keys(data)
+        @errors = Hash.new { |h,k| h[k] = [] }
+        @validated = {}
+        
+        STDERR.puts "🔍 VALIDATOR VALIDATING!: #{@attrs.keys.join(', ')} (#{@attrs.size} fields)"
+      end
+      # Si no se pasan datos, usamos los que ya estaban en @attrs
+      
+      run
+      raise Error, errors unless errors.values.all?(&:empty?)
+      validated
     end
 
     private
 
-    def check_required(field, value)
-      if value.nil? || value == ""
-        add_error(field, "is required")
+    def run
+      @rules.each do |field, rule_list|
+        process_field(field, rule_list)
       end
     end
 
-    def check_nullable(field, value)
-      # In Laravel, nullable means the field can be null, but if it has a value,
-      # it must be valid according to other rules
-      # This method just allows null values, validation happens in other rules
-      return if value.nil? || value == ""
-      
-      # Check if value is "null" string (explicit null)
-      if value.to_s.downcase == "null"
-        @data[field] = nil
+    def process_field(field, raw_rules)
+      value      = @attrs[field]
+      rules      = raw_rules.dup
+      bail       = rules.delete(:bail)
+      nullable   = rules.delete(:nullable)
+      sometimes  = rules.delete(:sometimes)
+      required   = rules.delete(:required)
+
+      # sometimes => solo valida si el campo está presente (como en Laravel)
+      return unless !sometimes || @attrs.key?(field)
+
+      # required
+      if required && !Helpers.present?(value)
+        add_error(field, "es obligatorio")
+        return if bail
+      end
+
+      # si es nulo y nullable, no seguimos validando
+      if value.nil?
+        return unless required # si no es required y es nil, listo
+        # si required + nil ya se reportó arriba; no seguimos
         return
       end
-      
-      # For nullable, we don't validate the type here, other rules will do that
-      # We just handle the "null" string case
+
+      # Aplica reglas restantes
+      coerced_value = value
+      rules.each do |rule|
+        break if bail && errors[field].any?
+
+        result = apply_rule(rule, coerced_value, field)
+        coerced_value = result[:value] if result[:success]
+        
+        unless result[:success]
+          add_error(field, result[:message])
+        end
+      end
+
+      @validated[field] = coerced_value if errors[field].empty?
     end
 
-    def check_type_if_not_null(field, value, klass)
-      # Skip validation if value is null (nullable fields)
-      return if value.nil? || value == ""
-      
-      # Check if value is "null" string (explicit null)
-      if value.to_s.downcase == "null"
-        return
-      end
-      
-      # Intentar convertir el valor
-      begin
-        if klass == Integer
-          Integer(value)
-        elsif klass == Float
-          Float(value)
-        elsif klass == String
-          value.to_s
-        else
-          add_error(field, "must be a #{klass}")
-          return
-        end
-      rescue ArgumentError => e
-        add_error(field, "must be a valid #{klass}")
-      end
-    end
-
-    def check_boolean_if_not_null(field, value)
-      # Skip validation if value is null (nullable fields)
-      return if value.nil? || value == ""
-      
-      # Check if value is "null" string (explicit null)
-      if value.to_s.downcase == "null"
-        return
-      end
-      
-      unless ["true", "false", true, false, "1", "0", 1, 0].include?(value)
-        add_error(field, "must be boolean")
-      end
-    end
-
-    def normalize_value(value, rules)
-      return nil if value.nil? || value == ""
-
-      if rules.include?(:int)
-        begin
-          Integer(value)
-        rescue ArgumentError
-          value # Si no se puede convertir, devolver el valor original
-        end
-      elsif rules.include?(:nullable)
-        if value.to_s.downcase == "null"
-          nil
-        else
-          # Try to convert to integer first
-          begin
-            Integer(value)
-          rescue ArgumentError
-            # Try to convert to float
-            begin
-              Float(value)
-            rescue ArgumentError
-              # Accept as string
-              value.to_s
-            end
-          end
-        end
-      elsif rules.include?(:float)
-        begin
-          Float(value)
-        rescue ArgumentError
-          value
-        end
-      elsif rules.include?(:boolean)
-        ["true", "1", 1, true].include?(value)
-      elsif rules.any? { |rule| rule.is_a?(Array) && rule.first == :enum }
-        # Find the enum rule and get its values
-        enum_rule = rules.find { |rule| rule.is_a?(Array) && rule.first == :enum }
-        valid_values = enum_rule[1..-1]
-        # Try to convert to integer first (for numeric enums)
-        begin
-          Integer(value)
-        rescue ArgumentError
-          # If not an integer, return as string
-          value.to_s
-        end
-      elsif rules.include?(:string)
-        value.to_s.strip
+    def apply_rule(rule, value, field)
+      case rule
+      when Symbol
+        apply_symbol_rule(rule, value, field)
+      when Array
+        apply_array_rule(rule, value, field)
+      when Proc
+        apply_proc_rule(rule, value, field)
       else
-        value
+        { success: false, value: value, message: "regla inválida: #{rule.inspect}" }
       end
     end
 
-    def check_enum_if_not_null(field, value, valid_values)
-      # Skip validation if value is null (nullable fields)
-      return if value.nil? || value == ""
+    def apply_symbol_rule(rule, value, field)
+      rule_class = Rules::Registry.get(rule)
       
-      # Check if value is "null" string (explicit null)
-      if value.to_s.downcase == "null"
-        return
+      if rule_class
+        result = rule_class.validate(value)
+        result
+      else
+        { success: false, value: value, message: "regla desconocida: #{rule}" }
       end
+    end
+
+    def apply_array_rule(rule, value, field)
+      name, *args = rule
       
-      # Try to convert to integer first (for numeric enums)
-      begin
-        enum_value = Integer(value)
-        unless valid_values.include?(enum_value)
-          add_error(field, "must be one of: #{valid_values.join(', ')}")
+      case name
+      when :min
+        rule_class = Rules::Registry.get(:min)
+        rule_class ? rule_class.validate(value, value: args[0]) : apply_min_rule(value, args[0])
+      when :max
+        rule_class = Rules::Registry.get(:max)
+        rule_class ? rule_class.validate(value, value: args[0]) : apply_max_rule(value, args[0])
+      when :between
+        apply_between_rule(value, args[0], args[1])
+      when :size
+        apply_size_rule(value, args[0])
+      when :in
+        rule_class = Rules::Registry.get(:in)
+        rule_class ? rule_class.validate(value, values: args[0]) : apply_in_rule(value, args[0])
+      when :enum
+        rule_class = Rules::Registry.get(:enum)
+        rule_class ? rule_class.validate(value, values: args) : apply_enum_rule(value, args)
+      when :regex
+        rule_class = Rules::Registry.get(:regex)
+        rule_class ? rule_class.validate(value, pattern: args[0]) : apply_regex_rule(value, args[0])
+      when :each
+        apply_each_rule(value, args[0], field)
+      else
+        { success: false, value: value, message: "regla desconocida: #{name}" }
+      end
+    end
+
+    def apply_min_rule(value, min)
+      if value.is_a?(Numeric)
+        if value >= min
+          { success: true, value: value, message: nil }
+        else
+          { success: false, value: value, message: "debe ser ≥ #{min}" }
         end
-      rescue ArgumentError
-        # If not an integer, check as string
-        unless valid_values.include?(value) || valid_values.include?(value.to_s)
-          add_error(field, "must be one of: #{valid_values.join(', ')}")
+      else
+        if value.to_s.length >= min
+          { success: true, value: value, message: nil }
+        else
+          { success: false, value: value, message: "debe tener longitud ≥ #{min}" }
         end
       end
+    end
+
+    def apply_max_rule(value, max)
+      if value.is_a?(Numeric)
+        if value <= max
+          { success: true, value: value, message: nil }
+        else
+          { success: false, value: value, message: "debe ser ≤ #{max}" }
+        end
+      else
+        if value.to_s.length <= max
+          { success: true, value: value, message: nil }
+        else
+          { success: false, value: value, message: "debe tener longitud ≤ #{max}" }
+        end
+      end
+    end
+
+    def apply_between_rule(value, min, max)
+      if value.is_a?(Numeric)
+        if (min..max).cover?(value)
+          { success: true, value: value, message: nil }
+        else
+          { success: false, value: value, message: "debe estar entre #{min} y #{max}" }
+        end
+      else
+        len = value.to_s.length
+        if (min..max).cover?(len)
+          { success: true, value: value, message: nil }
+        else
+          { success: false, value: value, message: "longitud debe estar entre #{min} y #{max}" }
+        end
+      end
+    end
+
+    def apply_size_rule(value, size)
+      if value.is_a?(Numeric)
+        if value == size
+          { success: true, value: value, message: nil }
+        else
+          { success: false, value: value, message: "debe ser exactamente #{size}" }
+        end
+      else
+        if value.to_s.length == size
+          { success: true, value: value, message: nil }
+        else
+          { success: false, value: value, message: "debe tener longitud exactamente #{size}" }
+        end
+      end
+    end
+
+    def apply_in_rule(value, allowed_values)
+      set = allowed_values || []
+      if Array(set).include?(value)
+        { success: true, value: value, message: nil }
+      else
+        { success: false, value: value, message: "debe ser uno de: #{Array(set).join(', ')}" }
+      end
+    end
+
+    def apply_enum_rule(value, allowed_values)
+      set = allowed_values || []
+      if Array(set).include?(value)
+        { success: true, value: value, message: nil }
+      else
+        { success: false, value: value, message: "debe ser uno de: #{Array(set).join(', ')}" }
+      end
+    end
+
+    def apply_regex_rule(value, regex)
+      if regex === value.to_s
+        { success: true, value: value, message: nil }
+      else
+        { success: false, value: value, message: "formato inválido" }
+      end
+    end
+
+    def apply_each_rule(value, subrules, field)
+      arr = value.is_a?(Array) ? value : Array(value)
+      arr.each_with_index do |item, idx|
+        item_errors = validate_value_against_rules(item, subrules, field, idx)
+        item_errors.each { |msg| add_error("#{field}.#{idx}".to_sym, msg) }
+      end
+      { success: true, value: value, message: nil }
+    end
+
+    def apply_proc_rule(rule, value, field)
+      ok, msg = rule.call(value, @attrs)
+      if ok
+        { success: true, value: value, message: nil }
+      else
+        { success: false, value: value, message: (msg || "no pasó validación") }
+      end
+    end
+
+    def validate_value_against_rules(value, subrules, field, _idx)
+      tmp_errors = []
+      coerced = value
+      subrules.each do |rule|
+        result = apply_rule(rule, coerced, field)
+        coerced = result[:value] if result[:success]
+        
+        unless result[:success]
+          tmp_errors << result[:message]
+        end
+      end
+      tmp_errors
     end
 
     def add_error(field, message)
-      (@errors[field] ||= []) << message
+      errors[field.to_sym] << message
+    end
+
+    def normalize_rules(h)
+      h.each_with_object({}) do |(k,v), acc|
+        acc[k.to_sym] = case v
+                        when String
+                          # si quisieras aceptar "required|string|email"
+                          v.split("|").map { |part| part.strip.to_sym }
+                        when Array
+                          v
+                        when Symbol
+                          [v]
+                        else
+                          []
+                        end
+      end
     end
   end
 end
