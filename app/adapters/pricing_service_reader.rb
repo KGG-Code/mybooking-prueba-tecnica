@@ -3,7 +3,7 @@
 require 'ostruct'
 
 module Adapters
-  # Reader que aplana la salida de tu Service::PricingService#get_price_definitions(conditions).
+  # Reader que aplana la salida de tu Service::PricingService#retrieve(conditions).
   # - No mete filas en blanco (presentación ⇒ exporter).
   # - Puede resolver season_name vía un resolver inyectado.
   #
@@ -20,7 +20,7 @@ module Adapters
     end
 
     def each
-      rows = @svc.get_price_definitions(@conditions)
+      rows = @svc.retrieve(@conditions)
 
       rows.each do |row|
         rl_name  = fetch(row, 'rental_location_name')

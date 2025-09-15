@@ -9,7 +9,7 @@ module Service
     # @param conditions [Hash] Optional conditions like { season_definition_id: 1 }
     # @return [Array] Array of price definitions with their relationships
     #
-  def get_price_definitions(conditions = {})
+  def retrieve(conditions = {})
     where_clause = build_where_clause(conditions)
     params = build_params(conditions)
     pagination_clause = build_pagination_clause(conditions)
@@ -82,7 +82,7 @@ module Service
   # @param conditions [Hash] Optional conditions like { season_definition_id: 1 }
   # @return [Integer] Total count of records
   #
-  def get_price_definitions_count(conditions = {})
+  def count(conditions = {})
     where_clause = build_where_clause(conditions)
     params = build_params(conditions)
     
@@ -107,13 +107,13 @@ module Service
   # @param conditions [Hash] Optional conditions including pagination
   # @return [Hash] Structured response with pagination metadata
   #
-  def get_price_definitions_paginated(conditions = {})
+  def paginate(conditions = {})
     # Extract pagination parameters
     page = conditions[:page]&.to_i || 1
     per_page = conditions[:page] ? (conditions[:per_page]&.to_i || 10) : nil
     
     # Get data
-    data = get_price_definitions(conditions)
+    data = retrieve(conditions)
     
     # If no pagination, return simple array
     return data unless per_page
@@ -122,7 +122,7 @@ module Service
     count_conditions = conditions.dup
     count_conditions.delete(:page)
     count_conditions.delete(:per_page)
-    total = get_price_definitions_count(count_conditions)
+    total = count(count_conditions)
     
     # Calculate pagination metadata
     last_page = (total.to_f / per_page).ceil

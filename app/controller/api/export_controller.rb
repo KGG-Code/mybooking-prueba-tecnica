@@ -2,6 +2,7 @@
 require 'sinatra/base'
 require 'sinatra/streaming'
 require 'tempfile'
+require_relative '../../validation/contracts/pricing_contracts'
 
 module Controller
   module Api
@@ -57,7 +58,7 @@ module Controller
                                   time_measurement_resolver: tm_resolver
                                 )
             exporter          = Service::ExportPricesCsv.new
-            validator         = Validation::Validator.new   # <-- ¡AQUÍ se define!
+            validator         = Validation::Validator.new(PricingContract.new({}))
 
             # 2) Use case con TODAS las deps
             use_case = UseCase::Export::ExportPricesUseCase.new(
