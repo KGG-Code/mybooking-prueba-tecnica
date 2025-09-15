@@ -3,6 +3,7 @@
 require 'csv'
 require 'ostruct'
 
+# Adapter para leer archivos CSV de precios y convertirlos a objetos OpenStruct.
 module Adapters
   class PricingCsvReader
     # Cabeceras esperadas:
@@ -66,7 +67,8 @@ module Adapters
 
     def to_f_or_nil(v)
       return nil if blank?(v)
-      v.to_s.strip.tr(',', '.').to_f
+      s = v.to_s.strip.tr(',', '.')
+      /\A-?\d+(\.\d+)?\z/ === s ? s.to_f : nil
     end
   end
 end

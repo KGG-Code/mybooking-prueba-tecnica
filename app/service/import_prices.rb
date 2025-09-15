@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+# Servicio para importar precios desde datos CSV procesados.
+#
+# Recibe un OpenStruct con datos "humanos" del CSV y devuelve [:ok, nil] o [:error, "reason"]
 module Service
   class ImportPrices
     def initialize(

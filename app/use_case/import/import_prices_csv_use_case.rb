@@ -22,7 +22,7 @@ module UseCase
         @reader.each_row do |row|
           total += 1
           status, reason = @importer.import(row) # [:ok, nil] o [:error, "reason"]
-
+          
           if status == :ok
             imported += 1
           else

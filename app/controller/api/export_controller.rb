@@ -62,7 +62,7 @@ module Controller
             validator         = Validation::Validator.new   # <-- ¡AQUÍ se define!
 
             # 2) Use case con TODAS las deps
-            use_case = UseCase::Export::ExportPricesCsvUseCase.new(
+            use_case = UseCase::Export::ExportPricesUseCase.new(
               reader: reader,
               exporter: exporter,
               validator: validator,
