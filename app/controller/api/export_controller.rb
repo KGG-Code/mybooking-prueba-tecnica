@@ -1,75 +1,96 @@
+# frozen_string_literal: true
+require 'sinatra/base'
+require 'sinatra/streaming'
 require 'tempfile'
 
 module Controller
   module Api
     module ExportController
       def self.registered(app)
-        
-        # Endpoint para descargar CSV de precios (TODOS los precios)
-        app.get '/api/export/prices.csv' do
-          
-          content_type "text/csv"
-          attachment "precios_export.csv"  # fuerza descarga
+        app.helpers Sinatra::Streaming
 
-          # Crear archivo temporal
-          tmp = Tempfile.new(['precios_export', '.csv'])
-          tmp_path = tmp.path
-          tmp.close # Cerrar el handle para que send_file pueda usarlo
-          
-          begin
-            # Usar el use case para la exportación
-            pricing_service = Service::PricingService.new
-            export_service = Service::ExportPricesCsv.new
-            validator = Validation::Validator.new
-            use_case = UseCase::Export::ExportPricesCsvUseCase.new(pricing_service, export_service, validator, logger)
-            result = use_case.perform(tmp_path)
-            
-            if result.success?
-              # Usar send_file y programar eliminación después de un tiempo razonable
-              send_file tmp_path, disposition: :attachment, filename: "precios_export.csv"
-              
-              # Programar eliminación del archivo después de un tiempo
-              Thread.new do
-                sleep 30 # Esperar 30 segundos para que termine la descarga
-                File.delete(tmp_path) if File.exist?(tmp_path)
-              end
-            else
-              logger.error "Error en exportación: #{result.message}"
-              raise Errors::ExportError.new("Error en la exportación: #{result.message}")
+        # Helpers locales para filtrar params permitidos hacia service
+        app.helpers do
+          def export_conditions_from_params
+            allowed = %i[
+              rental_location_id
+              rate_type_id
+              season_definition_id
+              season_id
+              unit
+              page
+              per_page
+            ]
+            cond = {}
+            allowed.each do |k|
+              cond[k] = params[k.to_s] if params.key?(k.to_s)
             end
-          rescue => e
-            # Eliminar archivo temporal si hay error
-            File.delete(tmp_path) if File.exist?(tmp_path)
-            raise e
+            # Normalizaciones mínimas
+            cond[:page]      = cond[:page].to_i      if cond[:page]
+            cond[:per_page]  = cond[:per_page].to_i  if cond[:per_page]
+            cond[:unit]      = cond[:unit].to_i      if cond[:unit]
+            cond[:season_id] = cond[:season_id].to_i if cond[:season_id]
+            cond
           end
         end
 
-        # Endpoint para obtener información sobre la exportación (JSON)
-        app.get '/api/export/prices/info' do
-          
-          content_type :json
-          
-          Tempfile.create(['precios_info', '.csv']) do |tmp|
-            pricing_service = Service::PricingService.new
-            export_service = Service::ExportPricesCsv.new
-            validator = Validation::Validator.new
-            use_case = UseCase::Export::ExportPricesCsvUseCase.new(pricing_service, export_service, validator, logger)
-            result = use_case.perform(tmp.path)
-            
-            if result.success?
-              # Usar los datos del use case en lugar de contar líneas del archivo
-              response = {
-                status: "success",
-                total_records: result.data[:total_records],
-                file_size_bytes: result.data[:file_size],
-                export_timestamp: Time.now.iso8601
-              }
-              
-              response.to_json
-            else
-              raise Errors::ExportError.new("Error obteniendo información de exportación: #{result.message}")
+        # =========================
+        # CSV: /api/export/prices.csv
+        # =========================
+        app.get '/api/export/prices.csv' do
+          content_type 'text/csv; charset=utf-8'
+          attachment  'precios_export.csv'
+          headers 'Cache-Control' => 'no-store'
+
+          tmp = Tempfile.create(['precios_export', '.csv'])
+          tmp_path = tmp.path
+          tmp.close
+
+          begin
+            # 1) Construcción de dependencias (en orden)
+            pricing_service   = Service::PricingService.new
+            season_repository = Repository::SeasonRepository.new
+            resolver          = Service::SeasonNameResolver.new(season_repository: season_repository)
+            tm_resolver       = Service::TimeMeasurementResolver.new
+            reader            = Adapters::PricingReaderFromService.new(
+                                  pricing_service,
+                                  conditions: export_conditions_from_params,
+                                  season_name_resolver: resolver,
+                                  time_measurement_resolver: tm_resolver
+                                )
+            exporter          = Service::ExportPricesCsv.new
+            validator         = Validation::Validator.new   # <-- ¡AQUÍ se define!
+
+            # 2) Use case con TODAS las deps
+            use_case = UseCase::Export::ExportPricesCsvUseCase.new(
+              reader: reader,
+              exporter: exporter,
+              validator: validator,
+              logger: logger
+            )
+
+            # 3) Ejecutar y pasar input al validador (si lo necesita)
+            result = use_case.perform(tmp_path, input: export_conditions_from_params)
+            halt 422, "Error en la exportación: #{result.message}" unless result.success?
+
+            # 4) Streaming del archivo + cleanup
+            stream do |out|
+              begin
+                File.open(tmp_path, 'rb') do |f|
+                  chunk_size = 64 * 1024
+                  while (chunk = f.read(chunk_size))
+                    out << chunk
+                    out.flush if out.respond_to?(:flush)
+                  end
+                end
+              ensure
+                File.delete(tmp_path) rescue nil
+              end
             end
-          end # Archivo se elimina automáticamente aquí
+          rescue => e
+            File.delete(tmp_path) rescue nil
+            raise
+          end
         end
       end
     end

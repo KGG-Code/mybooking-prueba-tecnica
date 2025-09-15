@@ -1,105 +1,72 @@
+# frozen_string_literal: true
+
 module UseCase
   module Import
-    #
-    # Use case to import prices from CSV
-    #
     class ImportPricesCsvUseCase
+      Result = Struct.new(:success?, :message, :imported, :total, :errors, keyword_init: true)
 
-      Result = Struct.new(:success?, :authorized?, :data, :message, keyword_init: true)
-
-      #
-      # Initialize the use case
-      #
-      # @param [Service::ImportPrices] import_service
-      # @param [Validation::Validator] validator
-      # @param [Logger] logger
-      #
-      def initialize(import_service, validator, logger)
-        @import_service = import_service
+      def initialize(reader:, importer:, validator:, logger: nil)
+        @reader    = reader      # each_row { |row| ... } con row._row_number
+        @importer  = importer    # Service::ImportPrices
         @validator = validator
-        @logger = logger
+        @logger    = logger
       end
 
-      #
-      # Perform the use case
-      #
-      # @param [String] csv_path - Path to the CSV file to import
-      #
-      # @return [Result]
-      #
-      def perform(csv_path)
-        begin
-          # Validar que el archivo existe y es válido
-          unless File.exist?(csv_path)
-            @logger.error "ImportPricesCsvUseCase - perform - CSV file does not exist: #{csv_path}"
-            return Result.new(success?: false, message: "CSV file does not exist")
-          end
+      def perform
+        safe_validate!
 
-          unless File.size(csv_path) > 0
-            @logger.error "ImportPricesCsvUseCase - perform - CSV file is empty: #{csv_path}"
-            return Result.new(success?: false, message: "CSV file is empty")
-          end
+        imported = 0
+        total    = 0
+        errors   = []
 
-          @logger.info "ImportPricesCsvUseCase - perform - starting import from #{csv_path}"
+        @reader.each_row do |row|
+          total += 1
+          status, reason = @importer.import(row) # [:ok, nil] o [:error, "reason"]
 
-          # Ejecutar la importación usando el import service
-          @import_service.call(csv_path)
-          
-          # Verificar que la importación fue exitosa
-          file_size = File.size(csv_path)
-          @logger.info "ImportPricesCsvUseCase - perform - CSV imported successfully (#{file_size} bytes processed)"
-          
-          return Result.new(
-            success?: true, 
-            authorized?: true, 
-            data: { 
-              file_path: csv_path, 
-              file_size: file_size,
-              processed_at: Time.now.iso8601
+          if status == :ok
+            imported += 1
+          else
+            errors << {
+              row:    (row.respond_to?(:_row_number) ? row._row_number : total),
+              values: {
+                category_code:        safe_str(row, :category_code),
+                rental_location_name: safe_str(row, :rental_location_name),
+                rate_type_name:       safe_str(row, :rate_type_name),
+                season_name:          safe_str(row, :season_name),
+                time_measurement:     safe_str(row, :time_measurement),
+                units:                safe_str(row, :units),
+                price:                safe_str(row, :price),
+                included_km:          safe_str(row, :included_km),
+                extra_km_price:       safe_str(row, :extra_km_price)
+              },
+              reason: reason.to_s
             }
-          )
-        rescue => e
-          @logger.error "ImportPricesCsvUseCase - perform - Error: #{e.message}"
-          return Result.new(success?: false, message: e.message)
+          end
         end
+
+        msg = errors.empty? ? "Importadas #{imported}/#{total} filas" :
+                              "Importadas #{imported}/#{total} filas; #{errors.size} con errores"
+
+        Result.new(success?: errors.empty?, message: msg, imported: imported, total: total, errors: errors)
+      rescue Validation::Error => e
+        @logger&.warn("[ImportPricesUseCase] validation failed: #{e.message}")
+        Result.new(success?: false, message: e.message, imported: 0, total: 0, errors: [])
+      rescue => e
+        @logger&.error("[ImportPricesUseCase] unexpected: #{e.class}: #{e.message}")
+        Result.new(success?: false, message: 'Fallo inesperado en la importación', imported: 0, total: 0, errors: [])
       end
 
       private
 
-      #
-      # Validate CSV file format and content
-      #
-      # @param [String] csv_path - Path to the CSV file
-      #
-      # @return [Boolean] true if valid, false otherwise
-      #
-      def validate_csv_file(csv_path)
-        begin
-          # Verificar que es un archivo CSV válido
-          CSV.foreach(csv_path, headers: true) do |row|
-            # Validar que tiene las columnas mínimas requeridas
-            required_headers = %w[category_code rental_location_name rate_type_name season_definition_name season_name time_measurement units]
-            missing_headers = required_headers - row.headers.map(&:downcase)
-            
-            if missing_headers.any?
-              @logger.error "ImportPricesCsvUseCase - validate_csv_file - Missing required headers: #{missing_headers.join(', ')}"
-              return false
-            end
-            
-            # Solo validar la primera fila para verificar estructura
-            break
-          end
-          
-          true
-        rescue CSV::MalformedCSVError => e
-          @logger.error "ImportPricesCsvUseCase - validate_csv_file - Malformed CSV: #{e.message}"
-          false
-        rescue => e
-          @logger.error "ImportPricesCsvUseCase - validate_csv_file - Error reading CSV: #{e.message}"
-          false
-        end
+      def safe_validate!
+        return unless @validator.respond_to?(:validate!)
+        arity = @validator.method(:validate!).arity
+        arity == 0 ? @validator.validate! : @validator.validate!({})
       end
 
+      def safe_str(row, attr)
+        row.respond_to?(attr) ? row.public_send(attr) : nil
+      end
     end
   end
 end
