@@ -552,82 +552,69 @@
 
         showLoading();
 
-        // Primero obtener las unidades disponibles
-        let unitsUrl = '/api/units-list?';
-        unitsUrl += `rental_location_id=${rentalLocationId}&rate_type_id=${rateTypeId}`;
+        // Cargar directamente los datos de precios
+        let pricingUrl = '/api/filtered-pricing?';
+        pricingUrl += `rental_location_id=${rentalLocationId}&rate_type_id=${rateTypeId}`;
         
         // Manejar season_definition_id (incluyendo null para "Tarifas sin temporadas")
         if (seasonDefinitionId && seasonDefinitionId !== '') {
-          unitsUrl += `&season_definition_id=${seasonDefinitionId}`;
+          pricingUrl += `&season_definition_id=${seasonDefinitionId}`;
         } else {
-          unitsUrl += `&season_definition_id=null`;
+          pricingUrl += `&season_definition_id=null`;
         }
         
         // Manejar season_id (incluyendo null para "Sin temporada específica")
         if (seasonId && seasonId !== '') {
-          unitsUrl += `&season_id=${seasonId}`;
+          pricingUrl += `&season_id=${seasonId}`;
         } else {
-          unitsUrl += `&season_id=null`;
+          pricingUrl += `&season_id=null`;
         }
         
         if (unit) {
-          unitsUrl += `&unit=${unit}`;
+          pricingUrl += `&unit=${unit}`;
+        }
+        if (perPage) {
+          pricingUrl += `&per_page=${perPage}`;
         }
 
         $.ajax({
-          url: unitsUrl,
+          url: pricingUrl,
           method: 'GET',
-          success: function(unitsResponse) {
-            const availableUnits = unitsResponse.units ? unitsResponse.units.split(',').map(u => parseInt(u)) : [];
+          success: function(data) {
+            // Extraer todas las unidades únicas de los datos de precios
+            const availableUnits = extractUnitsFromPricingData(data);
             
-            // Generar columnas dinámicamente
+            // Generar columnas dinámicamente basadas en los datos reales
             generateTableHeaders(availableUnits);
             
-            // Ahora cargar los datos de precios
-            let pricingUrl = '/api/filtered-pricing?';
-            pricingUrl += `rental_location_id=${rentalLocationId}&rate_type_id=${rateTypeId}`;
-            
-            // Manejar season_definition_id (incluyendo null para "Tarifas sin temporadas")
-            if (seasonDefinitionId && seasonDefinitionId !== '') {
-              pricingUrl += `&season_definition_id=${seasonDefinitionId}`;
-            } else {
-              pricingUrl += `&season_definition_id=null`;
-            }
-            
-            // Manejar season_id (incluyendo null para "Sin temporada específica")
-            if (seasonId && seasonId !== '') {
-              pricingUrl += `&season_id=${seasonId}`;
-            } else {
-              pricingUrl += `&season_id=null`;
-            }
-            
-            if (unit) {
-              pricingUrl += `&unit=${unit}`;
-            }
-            if (perPage) {
-              pricingUrl += `&per_page=${perPage}`;
-            }
-
-            $.ajax({
-              url: pricingUrl,
-              method: 'GET',
-              success: function(data) {
-                populatePricingTable(data, availableUnits);
-                hideLoading();
-              },
-              error: function(xhr) {
-                console.error('Error cargando datos de precios:', xhr.responseText);
-                alert('Error cargando los datos de precios');
-                hideLoading();
-              }
-            });
+            // Poblar la tabla con los datos
+            populatePricingTable(data, availableUnits);
+            hideLoading();
           },
           error: function(xhr) {
-            console.error('Error cargando unidades:', xhr.responseText);
-            alert('Error cargando las unidades disponibles');
+            console.error('Error cargando datos de precios:', xhr.responseText);
+            alert('Error cargando los datos de precios');
             hideLoading();
           }
         });
+      }
+
+      // Extraer todas las unidades únicas de los datos de precios
+      function extractUnitsFromPricingData(data) {
+        const unitsSet = new Set();
+        
+        data.forEach(item => {
+          if (item.prices && Array.isArray(item.prices)) {
+            item.prices.forEach(price => {
+              if (price.units !== null && price.units !== undefined) {
+                unitsSet.add(parseInt(price.units));
+              }
+            });
+          }
+        });
+        
+        // Convertir Set a Array y ordenar
+        return Array.from(unitsSet).sort((a, b) => a - b);
       }
 
       // Generar cabeceras de tabla dinámicamente
