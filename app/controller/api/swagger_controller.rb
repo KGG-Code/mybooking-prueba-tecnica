@@ -472,12 +472,27 @@ module Controller
                   }
                 }
               },
-              "/api/seasons": {
+              "/api/open-seasons": {
                 "get": {
-                  "summary": "List all seasons",
-                  "description": "Returns a list of all seasons ordered by name",
-                  "operationId": "listSeasons",
+                  "summary": "List seasons (open endpoint)",
+                  "description": "Returns a list of seasons with optional season definition filter. This is an open endpoint that doesn't require authentication.",
+                  "operationId": "listOpenSeasons",
                   "tags": ["Seasons"],
+                  "parameters": [
+                    {
+                      "name": "season_definition_id",
+                      "in": "query",
+                      "description": "Filter seasons by season definition ID (optional)",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1,
+                        "nullable": true
+                      },
+                      "example": 1
+                    }
+                  ],
                   "responses": {
                     "200": {
                       "description": "successful operation",
@@ -492,8 +507,8 @@ module Controller
                         }
                       }
                     },
-                    "401": {
-                      "description": "Unauthorized",
+                    "400": {
+                      "description": "Bad request - invalid parameters",
                       "content": {
                         "application/json": {
                           "schema": {
@@ -508,16 +523,16 @@ module Controller
                         }
                       }
                     },
-                    "400": {
-                      "description": "Bad request",
+                    "422": {
+                      "description": "Validation error",
                       "content": {
                         "application/json": {
                           "schema": {
                             "type": "object",
                             "properties": {
-                              "error": {
-                                "type": "string",
-                                "description": "Error message"
+                              "errors": {
+                                "type": "object",
+                                "description": "Validation errors by field"
                               }
                             }
                           }
@@ -527,23 +542,24 @@ module Controller
                   }
                 }
               },
-              "/api/seasons-by-season-definition": {
+              "/api/seasons": {
                 "get": {
-                  "summary": "List seasons by season definition",
-                  "description": "Returns seasons filtered by season definition ID",
-                  "operationId": "listSeasonsBySeasonDefinition",
+                  "summary": "List seasons (authenticated endpoint)",
+                  "description": "Returns a list of seasons filtered by season definition. This endpoint requires authentication and season_definition_id is mandatory.",
+                  "operationId": "listSeasons",
                   "tags": ["Seasons"],
                   "parameters": [
                     {
                       "name": "season_definition_id",
                       "in": "query",
-                      "description": "Season definition ID to filter seasons",
+                      "description": "Season definition ID to filter seasons (required)",
                       "required": true,
                       "schema": {
                         "type": "integer",
                         "format": "int64",
                         "minimum": 1
-                      }
+                      },
+                      "example": 1
                     }
                   ],
                   "responses": {
@@ -586,6 +602,22 @@ module Controller
                               "error": {
                                 "type": "string",
                                 "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "422": {
+                      "description": "Validation error",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "errors": {
+                                "type": "object",
+                                "description": "Validation errors by field"
                               }
                             }
                           }

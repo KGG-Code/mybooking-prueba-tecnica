@@ -1,7 +1,7 @@
 module UseCase
   module Season
     #
-    # Use case to list all seasons
+    # Use case to list seasons filtered by season definition
     #
     class ListSeasonsUseCase
 
@@ -10,44 +10,64 @@ module UseCase
       #
       # Initialize the use case
       #
-      # @param [Repository::SeasonRepository] season_repository
-      # @param [Logger] logger
+      # @param season_repository [Repository::SeasonRepository] The repository
+      # @param validator [Object] Must respond to set_schema, validate!, data (duck typing)
+      # @param logger [Logger] The logger
       #
-      def initialize(season_repository, logger)
+      def initialize(season_repository, validator, logger)
         @season_repository = season_repository
+        @validator = validator
         @logger = logger
       end
 
       #
       # Perform the use case
       #
-      # @param [Hash] params - Not used, kept for interface compatibility
+      # @param [Hash] params - Parameters including season_definition_id
       #
       # @return [Result]
       #
       def perform(params)
         
         processed_params = process_params(params)
-        data = load_data
-        @logger.info "ListSeasonsUseCase - perform - loaded #{data.length} seasons"
+    
+        conditions = build_conditions(processed_params)
+        data = load_data(conditions)
+        
+        @logger.info "ListSeasonsUseCase - perform - loaded #{data.length} seasons for season definition #{processed_params[:season_definition_id]}"
 
-        # Return the result
-        return Result.new(success?: true, authorized?: true, data: data)
+        Result.new(success?: true, authorized?: true, data: data)
       end
 
       private
 
-      def load_data
-        @season_repository.find_all(order: [:name.asc])
+      def load_data(conditions)
+        @season_repository.find_all(
+          conditions: conditions,
+          order: [:name.asc]
+        )
       end
 
       #
-      # Process the parameters - no validation needed
+      # Process the parameters
       #
       # @return [Hash]
       #
       def process_params(params)
-        return { valid: true, authorized: true }
+        @validator.validate!(params)
+      end
+
+      #
+      # Build conditions for the query
+      #
+      # @param [Hash] processed_params - Processed parameters
+      #
+      # @return [Hash] Conditions hash
+      #
+      def build_conditions(processed_params)
+        season_definition_id = processed_params[:season_definition_id]
+        return {} unless season_definition_id
+        { season_definition_id: season_definition_id }
       end
 
     end

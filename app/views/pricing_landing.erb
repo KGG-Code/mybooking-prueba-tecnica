@@ -494,7 +494,7 @@
       function loadSeasonDefinitions(rentalLocationId, rateTypeId) {
         showLoading();
         $.ajax({
-          url: `/api/season-definitions-by-rate-type?rental_location_id=${rentalLocationId}&rate_type_id=${rateTypeId}`,
+          url: `/api/season-definitions?rental_location_id=${rentalLocationId}&rate_type_id=${rateTypeId}`,
           method: 'GET',
           success: function(data) {
             const select = $('#season_definition_id');
@@ -517,7 +517,7 @@
       function loadSeasons(seasonDefinitionId) {
         showLoading();
         $.ajax({
-          url: `/api/seasons-by-season-definition?season_definition_id=${seasonDefinitionId}`,
+          url: `/api/seasons?season_definition_id=${seasonDefinitionId}`,
           method: 'GET',
           success: function(data) {
             const select = $('#season_id');

@@ -1,11 +1,14 @@
+require_relative '../../validation/contracts/season_contracts'
+
 module Controller
   module Api
     module SeasonController
       def self.registered(app)
         # REST API end-point to list all seasons
-        app.get '/api/seasons' do
+        app.get '/api/open-seasons' do
           use_case = UseCase::Season::ListSeasonsUseCase.new(
             Repository::SeasonRepository.new,
+            Validation::Validator.new(SeasonFilterOpenParamsContract.new({})),
             logger
           )
 
@@ -20,10 +23,10 @@ module Controller
         end
 
         # REST API end-point to list seasons filtered by season definition
-        app.get '/api/seasons-by-season-definition' do
-          use_case = UseCase::Season::ListSeasonsBySeasonDefinitionUseCase.new(
+        app.get '/api/seasons' do
+          use_case = UseCase::Season::ListSeasonsUseCase.new(
             Repository::SeasonRepository.new,
-            Validation::Validator.new,
+            Validation::Validator.new(SeasonFilterParamsContract.new({})),
             logger
           )
 
