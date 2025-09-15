@@ -182,7 +182,7 @@ module Service
       
       # Required nullable filter
       if conditions[:season_definition_id]
-        if conditions[:season_definition_id].to_s.downcase == 'null'
+        if conditions[:season_definition_id] == :explicit_null || conditions[:season_definition_id].to_s.downcase == 'null'
           clauses << "pd.season_definition_id IS NULL"
         else
           clauses << "pd.season_definition_id = ?"
@@ -191,7 +191,11 @@ module Service
       
       # Optional season_id filter (now we can filter prices directly)
       if conditions[:season_id]
-        clauses << "p.season_id = ?"
+        if conditions[:season_id] == :explicit_null || conditions[:season_id].to_s.downcase == 'null'
+          clauses << "p.season_id IS NULL"
+        else
+          clauses << "p.season_id = ?"
+        end
       end
       
       # Optional unit filter (time_measurement)
@@ -217,14 +221,18 @@ module Service
       
       # Required nullable filter
       if conditions[:season_definition_id]
-        if conditions[:season_definition_id].to_s.downcase != 'null'
+        if conditions[:season_definition_id] != :explicit_null && conditions[:season_definition_id].to_s.downcase != 'null'
           params << conditions[:season_definition_id]
         end
-        # If season_definition_id is 'null', don't add any parameters for season filters
+        # If season_definition_id is :explicit_null or 'null', don't add any parameters for season filters
       end
       
       # Optional season_id filter
-      params << conditions[:season_id] if conditions[:season_id]
+      if conditions[:season_id]
+        if conditions[:season_id] != :explicit_null && conditions[:season_id].to_s.downcase != 'null'
+          params << conditions[:season_id]
+        end
+      end
       
       # Optional unit filter
       params << conditions[:unit] if conditions[:unit]

@@ -59,8 +59,8 @@ class PricingFilterParamsContract
     @rules = {
       rental_location_id: [:required, :int],
       rate_type_id: [:required, :int],
-      season_definition_id: [:nullable, :int],
-      season_id: [:nullable, :int],
+      season_definition_id: [:optional, :nullable, :int],
+      season_id: [:optional, :nullable, :int],
       unit: [:optional, :int, [:enum, 1, 2, 3, 4]], # meses, días, horas, minutos
       page: [:optional, :int],
       per_page: [:optional, :int]

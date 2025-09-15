@@ -553,7 +553,7 @@
         showLoading();
 
         // Cargar directamente los datos de precios
-        let pricingUrl = '/api/filtered-pricing?';
+        let pricingUrl = '/api/pricing?';
         pricingUrl += `rental_location_id=${rentalLocationId}&rate_type_id=${rateTypeId}`;
         
         // Manejar season_definition_id (incluyendo null para "Tarifas sin temporadas")

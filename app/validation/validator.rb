@@ -125,6 +125,12 @@ module Validation
 
     def process_field(field, raw_rules)
       value      = @attrs[field]
+      # Marcar si el campo fue enviado explícitamente como "null"
+      was_explicit_null = false
+      if value == "null" && raw_rules.include?(:nullable)
+        value = nil
+        was_explicit_null = true
+      end
       rules      = raw_rules.dup
       bail       = rules.delete(:bail)
       nullable   = rules.delete(:nullable)
@@ -140,8 +146,17 @@ module Validation
         return if bail
       end
 
-      # si es nulo y nullable, no seguimos validando
+      # si es nulo y nullable, guardamos nil y no seguimos validando
       if value.nil?
+        if nullable
+          # Si fue enviado explícitamente como "null", marcarlo como tal
+          if was_explicit_null
+            @validated[field] = :explicit_null
+          else
+            @validated[field] = nil
+          end
+          return
+        end
         return unless required # si no es required y es nil, listo
         # si required + nil ya se reportó arriba; no seguimos
         return
