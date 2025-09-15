@@ -72,6 +72,14 @@ module Controller
               {
                 "name": "Pricing",
                 "description": "Operations related to price definitions"
+              },
+              {
+                "name": "Export",
+                "description": "Operations related to data export"
+              },
+              {
+                "name": "Import",
+                "description": "Operations related to data import"
               }
             ],
             "paths": {
@@ -90,6 +98,74 @@ module Controller
                             "type": "array",
                             "items": {
                               "$ref": "#/components/schemas/RentalLocation"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/rental-locations/{id}/rate-types": {
+                "get": {
+                  "summary": "List rate types for a specific rental location",
+                  "description": "Returns rate types filtered by rental location ID",
+                  "operationId": "listRateTypesByRentalLocationId",
+                  "tags": ["Rental Locations"],
+                  "parameters": [
+                    {
+                      "name": "id",
+                      "in": "path",
+                      "description": "Rental location ID",
+                      "required": true,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    }
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/RateType"
                             }
                           }
                         }
@@ -788,6 +864,269 @@ module Controller
                             "type": "object",
                             "properties": {
                               "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/units-list": {
+                "get": {
+                  "summary": "Get units list as string",
+                  "description": "Returns a string containing available units based on filters",
+                  "operationId": "getUnitsList",
+                  "tags": ["Pricing"],
+                  "parameters": [
+                    {
+                      "name": "rental_location_id",
+                      "in": "query",
+                      "description": "Rental location ID to filter units",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    },
+                    {
+                      "name": "rate_type_id",
+                      "in": "query",
+                      "description": "Rate type ID to filter units",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    },
+                    {
+                      "name": "season_definition_id",
+                      "in": "query",
+                      "description": "Season definition ID to filter units",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    },
+                    {
+                      "name": "season_id",
+                      "in": "query",
+                      "description": "Season ID to filter units",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                      }
+                    },
+                    {
+                      "name": "unit",
+                      "in": "query",
+                      "description": "Time unit to filter units (1=meses, 2=días, 3=horas, 4=minutos)",
+                      "required": false,
+                      "schema": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 4
+                      }
+                    }
+                  ],
+                  "responses": {
+                    "200": {
+                      "description": "successful operation",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "units": {
+                                "type": "string",
+                                "description": "String containing available units",
+                                "example": "1,2,4,15"
+                              }
+                            },
+                            "required": ["units"]
+                          }
+                        }
+                      }
+                    },
+                    "401": {
+                      "description": "Unauthorized",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "error": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/export/prices.csv": {
+                "get": {
+                  "summary": "Export all prices to CSV",
+                  "description": "Downloads a CSV file containing all price data with category, rental location, rate type, season, and pricing information",
+                  "operationId": "exportPricesCsv",
+                  "tags": ["Export"],
+                  "responses": {
+                    "200": {
+                      "description": "CSV file download",
+                      "content": {
+                        "text/csv": {
+                          "schema": {
+                            "type": "string",
+                            "format": "binary"
+                          }
+                        }
+                      },
+                      "headers": {
+                        "Content-Disposition": {
+                          "description": "Attachment filename",
+                          "schema": {
+                            "type": "string",
+                            "example": "attachment; filename=\"precios_export.csv\""
+                          }
+                        }
+                      }
+                    },
+                    "500": {
+                      "description": "Internal server error",
+                      "content": {
+                        "text/plain": {
+                          "schema": {
+                            "type": "string",
+                            "description": "Error message"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "/api/import/prices": {
+                "post": {
+                  "summary": "Import prices from CSV",
+                  "description": "Uploads a CSV file to import price data. The CSV should contain category_code, rental_location_name, rate_type_name, season_name, time_measurement, units, and optional price, included_km, extra_km_price columns.",
+                  "operationId": "importPrices",
+                  "tags": ["Import"],
+                  "requestBody": {
+                    "required": true,
+                    "content": {
+                      "multipart/form-data": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "file": {
+                              "type": "string",
+                              "format": "binary",
+                              "description": "CSV file containing price data"
+                            }
+                          },
+                          "required": ["file"]
+                        }
+                      }
+                    }
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "Import successful",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Import status",
+                                "example": "success"
+                              },
+                              "message": {
+                                "type": "string",
+                                "description": "Success message",
+                                "example": "Importación completada"
+                              }
+                            },
+                            "required": ["status", "message"]
+                          }
+                        }
+                      }
+                    },
+                    "400": {
+                      "description": "Bad request - missing file",
+                      "content": {
+                        "text/plain": {
+                          "schema": {
+                            "type": "string",
+                            "description": "Error message",
+                            "example": "Archivo requerido"
+                          }
+                        }
+                      }
+                    },
+                    "422": {
+                      "description": "Validation error",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Error status",
+                                "example": "error"
+                              },
+                              "message": {
+                                "type": "string",
+                                "description": "Error message"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "500": {
+                      "description": "Internal server error",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "status": {
+                                "type": "string",
+                                "description": "Error status",
+                                "example": "error"
+                              },
+                              "message": {
                                 "type": "string",
                                 "description": "Error message"
                               }

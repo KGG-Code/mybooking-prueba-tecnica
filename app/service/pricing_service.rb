@@ -42,8 +42,11 @@ module Service
         ON crlrt.rate_type_id = rt.id
       JOIN price_definitions pd
         ON pd.id = crlrt.price_definition_id
-      JOIN prices p
-        ON p.price_definition_id = pd.id
+      LEFT JOIN seasons s
+        ON s.season_definition_id = pd.season_definition_id
+      LEFT JOIN prices p
+        ON p.price_definition_id = pd.id 
+        AND (p.season_id = s.id OR p.season_id IS NULL)
       #{where_clause}
       GROUP BY c.id, c.code, c.name, rl.name, rt.name, pd.id
       ORDER BY c.code
@@ -135,6 +138,31 @@ module Service
     }
   end
 
+
+  #
+  # Get units list as comma-separated string for specific filters
+  #
+  # @param conditions [Hash] Conditions like { season_id: 1, unit: 2 }
+  # @return [String] Comma-separated string of units values
+  #
+  def get_units_list_by_filters(conditions = {})
+    where_clause = build_where_clause(conditions)
+    params = build_params(conditions)
+    
+    sql = <<-SQL
+      SELECT GROUP_CONCAT(DISTINCT p.units ORDER BY p.units ASC SEPARATOR ',') as units_string
+      FROM prices p
+      JOIN price_definitions pd ON p.price_definition_id = pd.id
+      JOIN category_rental_location_rate_types crlrt ON pd.id = crlrt.price_definition_id
+      JOIN rental_locations rl ON crlrt.rental_location_id = rl.id
+      JOIN rate_types rt ON crlrt.rate_type_id = rt.id
+      JOIN categories c ON crlrt.category_id = c.id
+      #{where_clause}
+    SQL
+
+    result = Infraestructure::Query.run(sql, *params)
+    result.first&.to_s || ""
+  end
 
   private
 

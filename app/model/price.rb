@@ -10,7 +10,9 @@ module Model
      belongs_to :price_definition, 'Model::PriceDefinition', required: true
      belongs_to :season, 'Model::Season', required: false
 
-     property :time_measurement, Enum[:months, :days, :hours, :minutes], :default => :days
+     # Esto es un error? 
+     #property :time_measurement, Enum[:months, :days, :hours, :minutes], :default => :days
+     property :time_measurement, Integer, :default => 2
      property :units, Integer
      property :price, Decimal, precision: 10, scale: 2
 
