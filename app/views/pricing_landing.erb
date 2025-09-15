@@ -194,11 +194,15 @@
           if (seasonDefinitionId && seasonDefinitionId !== '') {
             loadSeasons(seasonDefinitionId);
             resetDependentFields(['season_id']);
+            // Habilitar el campo season_id cuando hay temporadas
+            $('#season_id').prop('disabled', false);
+            $('#season_id').prop('required', true);
           } else {
             // "Tarifas sin temporadas" seleccionado
             resetDependentFields(['season_id']);
             // Deshabilitar el campo season_id cuando no hay temporadas
             $('#season_id').prop('disabled', true);
+            $('#season_id').prop('required', false);
             $('#season_id').empty().append('<option value="">Sin temporada específica</option>');
             $('#season_id').trigger('change');
           }
@@ -526,6 +530,7 @@
               select.append(`<option value="${season.id}">${season.name}</option>`);
             });
             enableField('season_id');
+            select.prop('required', true); // Marcar como requerido cuando hay temporadas
             select.trigger('change');
             hideLoading();
           },
@@ -547,6 +552,12 @@
 
         if (!rentalLocationId || !rateTypeId) {
           alert('Por favor seleccione una sucursal y un tipo de tarifa');
+          return;
+        }
+
+        // Validar que si hay season_definition_id, también debe haber season_id
+        if (seasonDefinitionId && seasonDefinitionId !== '' && (!seasonId || seasonId === '')) {
+          alert('Por favor seleccione una temporada específica');
           return;
         }
 
