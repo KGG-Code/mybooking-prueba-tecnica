@@ -80,10 +80,6 @@ module Controller
               {
                 "name": "Import",
                 "description": "Operations related to data import"
-              },
-              {
-                "name": "Sample",
-                "description": "Sample operations for testing"
               }
             ],
             "paths": {
@@ -1131,112 +1127,6 @@ module Controller
                                 "example": "error"
                               },
                               "message": {
-                                "type": "string",
-                                "description": "Error message"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "/api/sample": {
-                "get": {
-                  "summary": "Sample REST API endpoint",
-                  "description": "Sample endpoint for testing basic functionality",
-                  "operationId": "sampleEndpoint",
-                  "tags": ["Sample"],
-                  "responses": {
-                    "200": {
-                      "description": "successful operation",
-                      "content": {
-                        "application/json": {
-                          "schema": {
-                            "type": "object",
-                            "description": "Sample response data"
-                          }
-                        }
-                      }
-                    },
-                    "401": {
-                      "description": "Unauthorized",
-                      "content": {
-                        "application/json": {
-                          "schema": {
-                            "type": "object",
-                            "properties": {
-                              "error": {
-                                "type": "string",
-                                "description": "Error message"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "400": {
-                      "description": "Bad request",
-                      "content": {
-                        "application/json": {
-                          "schema": {
-                            "type": "object",
-                            "properties": {
-                              "error": {
-                                "type": "string",
-                                "description": "Error message"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "/api/sample-service": {
-                "get": {
-                  "summary": "Sample service endpoint",
-                  "description": "Sample endpoint using a service with SQL query",
-                  "operationId": "sampleServiceEndpoint",
-                  "tags": ["Sample"],
-                  "responses": {
-                    "200": {
-                      "description": "successful operation",
-                      "content": {
-                        "application/json": {
-                          "schema": {
-                            "type": "object",
-                            "description": "Sample service response data"
-                          }
-                        }
-                      }
-                    },
-                    "401": {
-                      "description": "Unauthorized",
-                      "content": {
-                        "application/json": {
-                          "schema": {
-                            "type": "object",
-                            "properties": {
-                              "error": {
-                                "type": "string",
-                                "description": "Error message"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "400": {
-                      "description": "Bad request",
-                      "content": {
-                        "application/json": {
-                          "schema": {
-                            "type": "object",
-                            "properties": {
-                              "error": {
                                 "type": "string",
                                 "description": "Error message"
                               }
