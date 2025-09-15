@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Service
-  class TimeMeasurementResolver
+  module Resolvers
+    class TimeMeasurementResolver
 
     TIME_UNIT_MAPPING = {
       1 => "meses",
@@ -23,6 +24,6 @@ module Service
     rescue StandardError
       "Medida #{time_measurement}"
     end
+    end
   end
 end
-  

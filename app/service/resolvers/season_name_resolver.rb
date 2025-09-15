@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Service
+  module Resolvers
     class SeasonNameResolver
       def initialize(season_repository:)
         @repo  = season_repository
@@ -19,4 +20,4 @@ module Service
       end
     end
   end
-  
+end
