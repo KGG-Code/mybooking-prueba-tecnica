@@ -35,14 +35,14 @@ module Controller
             crlrt_repo        = Repository::CategoryRentalLocationRateTypeRepository.new
             season_repo       = Repository::SeasonRepository.new
             price_def_repo    = Repository::PriceDefinitionRepository.new
-            pd_units_resolver = Service::Resolvers::AllowedUnitsFromPriceDefinitionResolver.new(
+            pd_units_resolver = Utils::Resolvers::AllowedUnitsFromPriceDefinitionResolver.new(
               price_definition_repo: price_def_repo,
               logger: logger
             )
             
             # Repositorios
             # Resolvers/recursos basados en repos
-            price_def_resolver = Service::Resolvers::PriceDefinitionResolver.new(
+            price_def_resolver = Utils::Resolvers::PriceDefinitionResolver.new(
               category_repo: category_repo,
               rental_location_repo: rl_repo,
               rate_type_repo: rt_repo,
@@ -50,7 +50,7 @@ module Controller
               logger: logger
             )
 
-            season_id_resolver = Service::Resolvers::SeasonIdResolver.new(
+            season_id_resolver = Utils::Resolvers::SeasonIdResolver.new(
               season_repo: season_repo,
               logger: logger
             )

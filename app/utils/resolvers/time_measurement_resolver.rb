@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Service
+module Utils
   module Resolvers
     class TimeMeasurementResolver
 

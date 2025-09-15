@@ -50,8 +50,8 @@ module Controller
             # 1) Construcción de dependencias (en orden)
             pricing_service   = Service::PricingService.new
             season_repository = Repository::SeasonRepository.new
-            resolver          = Service::Resolvers::SeasonNameResolver.new(season_repository: season_repository)
-            tm_resolver       = Service::Resolvers::TimeMeasurementResolver.new
+            resolver          = Utils::Resolvers::SeasonNameResolver.new(season_repository: season_repository)
+            tm_resolver       = Utils::Resolvers::TimeMeasurementResolver.new
             reader            = Adapters::PricingReaderFromService.new(
                                   pricing_service,
                                   conditions: export_conditions_from_params,
