@@ -105,8 +105,11 @@
       <!-- Acciones -->
       <div class="container">
         <div class="row">
-          <div class="col-12">
+          <div class="col-6">
             <button class="btn btn-secondary w-100" data-bs-toggle="modal" data-bs-target="#importModal">Importar</button>
+          </div>
+          <div class="col-6">
+            <button class="btn btn-success w-100" id="exportBtn">Exportar</button>
           </div>
         </div> 
       </div>
@@ -426,6 +429,42 @@
         $('#importModal').on('hide.bs.modal', function() {
           // Clean up any expanded error details when closing
           $('#errorDetails').removeClass('show');
+        });
+
+        // Export functionality
+        $('#exportBtn').on('click', function() {
+          // Show loading state
+          $(this).prop('disabled', true);
+          $(this).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Exportando...');
+
+          // Use fetch API for better error handling
+          fetch('/api/export/prices.csv')
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return response.blob();
+            })
+            .then(blob => {
+              // Create download link
+              const url = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'precios_export.csv';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+              console.error('Error exporting:', error);
+              alert('Error al exportar los datos. Por favor, inténtelo de nuevo.');
+            })
+            .finally(() => {
+              // Reset button state
+              $('#exportBtn').prop('disabled', false);
+              $('#exportBtn').html('Exportar');
+            });
         });
       });
 

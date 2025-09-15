@@ -43,6 +43,7 @@ module Service
 
       # 4) Resolver season
       season_id = @season_r.call(row.season_name) # nil si "Sin Temporada" o vacío
+      return error("invalid_season_name") if season_id.is_a?(String)
 
       # check if price is vaid float number
       return error("invalid_price") unless is_f(row.price)

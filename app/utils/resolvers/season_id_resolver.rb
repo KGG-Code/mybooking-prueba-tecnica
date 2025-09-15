@@ -15,10 +15,14 @@ module Utils
       return nil if name.to_s.strip.downcase == 'sin temporada'
 
       season = @seasons.first(name: name)
-      season&.id
+      if season
+        season.id
+      else
+        name
+      end
     rescue => e
       @logger&.error("[SeasonIdResolver] #{e.class}: #{e.message}")
-      nil
+      name
     end
     end
   end

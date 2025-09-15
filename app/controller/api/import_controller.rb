@@ -2,6 +2,7 @@
 require 'sinatra/base'
 require 'json'
 require 'tempfile'
+require_relative '../../validation/contracts/pricing_contracts'
 
 module Controller
   module Api
@@ -62,7 +63,7 @@ module Controller
               logger: logger
             )
 
-            validator = Validation::Validator.new
+            validator = Validation::Validator.new(PricingContract.new({}))
 
             use_case = UseCase::Import::ImportPricesUseCase.new(
               reader: reader,

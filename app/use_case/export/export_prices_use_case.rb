@@ -10,13 +10,14 @@ module UseCase
       def initialize(reader:, exporter:, validator:, logger: nil)
         @reader    = reader
         @exporter  = exporter
+        @validator = validator
         @logger    = logger
       end
 
       def perform(path, input: {}, options: {})
         File.open(path, 'wb') { |file| call(io: file, input: input, options: options) }
         Result.new(success?: true)
-      rescue Validation::Error => e
+      rescue Errors::ValidationError => e
         @logger&.warn("[ExportPricesUseCase] validation failed: #{e.message}")
         Result.new(success?: false, message: e.message)
       rescue => e
