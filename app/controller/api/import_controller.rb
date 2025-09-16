@@ -63,12 +63,9 @@ module Controller
               logger: logger
             )
 
-            validator = Validation::Validator.new(PricingContract.new({}))
-
             use_case = UseCase::Import::ImportPricesUseCase.new(
               reader: reader,
               importer: importer,
-              validator: validator,
               logger: logger
             )
 
