@@ -5,7 +5,7 @@ module UseCase
     class ImportPricesUseCase
       Result = Struct.new(:success?, :message, :imported, :total, :errors, :status, keyword_init: true)
 
-      def initialize(reader:, importer:, validator:, logger: nil)
+      def initialize(reader:, importer:, logger: nil)
         @reader    = reader      # each { |row| ... } con row._row_number
         @importer  = importer    # Service::ImportPrices
         @logger    = logger
