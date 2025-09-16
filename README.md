@@ -103,19 +103,6 @@ Model Layer         → Domain entities, business rules, data validation
 
 This architecture ensures **separation of concerns**, **loose coupling**, and **high cohesion**, facilitating system maintenance and evolution while supporting enterprise-grade scalability and reliability.
 
-## Running Tests
-
-```bash
-bundle exec rspec spec
-```
-
-Run specific test types:
-
-```bash
-bundle exec rspec spec/integration
-bundle exec rspec spec/unit
-```
-
 ## Import/Export
 
 ### Import CSV Format
