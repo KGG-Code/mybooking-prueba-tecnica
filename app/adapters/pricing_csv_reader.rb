@@ -14,7 +14,12 @@ module Adapters
     end
 
     def each
-      csv = CSV.new(@file, headers: true, skip_blanks: false)
+      # Leer el contenido del archivo y remover BOM si existe
+      content = @file.read
+      content = content.force_encoding('UTF-8')
+      content = content.sub(/\A\xEF\xBB\xBF/, '') # Remover BOM UTF-8
+      
+      csv = CSV.new(content, headers: true, skip_blanks: true)
       row_no = 2 # asumiendo la fila 1 es la cabecera
 
       csv.each do |r|

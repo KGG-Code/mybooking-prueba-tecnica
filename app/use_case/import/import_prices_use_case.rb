@@ -8,13 +8,10 @@ module UseCase
       def initialize(reader:, importer:, validator:, logger: nil)
         @reader    = reader      # each { |row| ... } con row._row_number
         @importer  = importer    # Service::ImportPrices
-        @validator = validator
         @logger    = logger
       end
 
       def perform
-        safe_validate!
-
         imported = 0
         total    = 0
         errors   = []
@@ -70,21 +67,9 @@ module UseCase
           errors: errors,
           status: status
         )
-      rescue Validation::Error => e
-        @logger&.warn("[ImportPricesUseCase] validation failed: #{e.message}")
-        Result.new(success?: false, message: e.message, imported: 0, total: 0, errors: [], status: :error)
-      rescue => e
-        @logger&.error("[ImportPricesUseCase] unexpected: #{e.class}: #{e.message}")
-        Result.new(success?: false, message: 'Fallo inesperado en la importación', imported: 0, total: 0, errors: [], status: :error)
       end
 
       private
-
-      def safe_validate!
-        return unless @validator.respond_to?(:validate!)
-        arity = @validator.method(:validate!).arity
-        arity == 0 ? @validator.validate! : @validator.validate!({})
-      end
 
       def safe_str(row, attr)
         row.respond_to?(attr) ? row.public_send(attr) : nil
