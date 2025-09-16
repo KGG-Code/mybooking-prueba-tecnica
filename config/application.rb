@@ -33,3 +33,10 @@ require_relative '../lib/base_repository'
 require_relative '../lib/base_serializer'
 require_relative '../lib/query'
 require_relative '../lib/transaction'
+
+# Validation classes
+require_relative '../app/validation/validator'
+require_relative '../app/validation/dry_validator'
+
+# Middlewares
+require_relative "../app/middlewares/error_handler"

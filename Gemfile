@@ -29,6 +29,9 @@ gem "dm-observer"
 gem 'csv'
 gem 'mutex_m'
 
+# Excel file handling
+gem 'roo', '~> 2.10'
+
 group :development do
   gem "dotenv"
   gem 'rspec'
