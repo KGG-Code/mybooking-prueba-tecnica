@@ -36,7 +36,7 @@ module Utils
         return nil
       end
 
-      link.price_definition_id
+      link.price_definition
     rescue => e
       @logger&.error("[PriceDefinitionResolver] #{e.class}: #{e.message}")
       nil

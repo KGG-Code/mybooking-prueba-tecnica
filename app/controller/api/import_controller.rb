@@ -30,10 +30,10 @@ module Controller
 
             # Repositorios
             pd_units_resolver = Utils::Resolvers::AllowedUnitsFromPriceDefinitionResolver.new(
-              price_definition_repo: Repository::PriceDefinitionRepository.new,
               logger: logger
             )
-
+            pd_units_resolver.clear_cache!
+            
             price_def_resolver = Utils::Resolvers::PriceDefinitionResolver.new(
               category_repo: Repository::CategoryRepository.new,
               rental_location_repo: Repository::RentalLocationRepository.new,

@@ -29,6 +29,7 @@ module Model
      property :units_management_hours, Enum[:unitary, :detailed], :default => :unitary
      property :units_management_minutes, Enum[:unitary, :detailed], :default => :unitary
 
+     property :units_management_value_months_list, String, length: 255, default: '1' # comma-separated values
      property :units_management_value_days_list, String, length: 255, default: '1' # comma-separated values
      property :units_management_value_hours_list, String, length: 255, default: '1' # comma-separated values
      property :units_management_value_minutes_list, String, length: 255, default: '1' # comma-separated values

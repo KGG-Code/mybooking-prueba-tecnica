@@ -27,38 +27,42 @@ module Service
     # row: OpenStruct con columnas “humanas”; devuelve [:ok, nil] o [:error, "reason"]
     def import(row)
       # 1) Resolver PD
-      price_definition_id = @pd_res.call(row)
-      return error("price_definition_not_found") unless price_definition_id
-
+      price_definition    = @pd_res.call(row)
+      return error("price_definition_not_found") unless price_definition
+      
       # 2) Parse TM y units
       tm_code = @tm_parse.call(row.time_measurement)
       units   = int_or_nil(row.units)
       return error("invalid_time_measurement_or_units") if tm_code.nil? || units.nil?
 
-      # 3) Regla de negocio: PD habilita TM y units
-      # Crear objeto temporal con los datos necesarios para el resolver
-      resolver_data = OpenStruct.new(
-        price_definition_id: price_definition_id,
-        time_measurement: tm_code
-      )
-      allowed = @pd_units.call(resolver_data)
-      return error("unit_not_allowed_by_price_definition") unless allowed.include?(units)
-
-      # 4) Resolver season
+      # 3) Resolver season
       season_id = @season_r.call(row.season_name) # nil si "Sin Temporada" o vacío
       return error("invalid_season_name") if season_id.is_a?(String)
 
-      # check if price is vaid float number
+      # 4) Validar coherencia entre season_id y price_definition.season_definition_id
+      if season_id.nil? && price_definition.season_definition_id.present?
+        return error("season_definition_mismatch: price_definition has season_definition but season_id is null")
+      elsif season_id.present? && price_definition.season_definition_id.nil?
+        return error("season_definition_mismatch: price_definition has no season_definition but season_id is present")
+      end
+
+      # 5) Regla de negocio: PD habilita TM y units
+      allowed = @pd_units.call(price_definition, tm_code)
+      @logger&.info("[ImportPrices] ALLOWED UNITS: #{allowed.inspect} for tm_code=#{tm_code}, units=#{units}")
+      
+      return error("unit_not_allowed_by_price_definition") unless allowed.include?(units)
+
+      # 5) check if price is vaid float number
       return error("invalid_price") unless is_f(row.price)
 
-      # 5) Persistir (upsert)
+      # 6) Persistir (upsert)
       attrs = {
-        price_definition_id: price_definition_id,
+        price_definition_id: price_definition.id,
         season_id:           season_id,
         time_measurement:    tm_code,
         units:               units,
         price:               row.price.to_f,
-        included_km:         int_or_nil(row.included_km),
+        included_km:         row.included_km.to_i,
         extra_km_price:      row.extra_km_price.to_f
       }
 
