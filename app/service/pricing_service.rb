@@ -36,7 +36,7 @@ module Service
                   )
                 ELSE NULL
               END
-              ORDER BY p.season_id, p.time_measurement, p.units
+              ORDER BY p.time_measurement, p.season_id, p.units
             ),
             JSON_ARRAY()
           ) AS prices_json_string
@@ -59,7 +59,11 @@ module Service
           AND (p.season_id IS NULL OR p.season_definition_id = pd.season_definition_id)
         #{where_clause}
         GROUP BY c.id, c.code, c.name, rl.name, rt.name, pd.id
-        ORDER BY c.code
+        ORDER BY 
+          pd.time_measurement,
+          rl.name,
+          rt.name,
+          c.code
         #{pagination_clause}
       SQL
 
