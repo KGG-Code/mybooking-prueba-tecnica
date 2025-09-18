@@ -40,7 +40,7 @@ module Service
 
       enum_proc.call do |row|
         if grouped
-          current_key = [row.category_code, row.rental_location_name, row.rate_type_name]
+          current_key = [row.category_code, row.rental_location_name, row.rate_type_name, row.time_measurement]
           if last_key && current_key != last_key
             csv << [] # línea en blanco entre grupos
           end

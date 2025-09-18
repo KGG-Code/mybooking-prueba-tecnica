@@ -59,8 +59,7 @@ module Service
           AND (p.season_id IS NULL OR p.season_definition_id = pd.season_definition_id)
         #{where_clause}
         GROUP BY c.id, c.code, c.name, rl.name, rt.name, pd.id
-        ORDER BY 
-          pd.time_measurement,
+        ORDER BY
           rl.name,
           rt.name,
           c.code
